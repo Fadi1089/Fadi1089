@@ -58,7 +58,6 @@
 👤 **Fadi SULTAN**  
 📍 Strasbourg, France  
 💼 Étudiant en BUT Informatique – IUT Robert Schuman  
-📧 **[fadi.sultan.dev@gmail.com](mailto:fadi.sultan.dev@gmail.com)**  
-🐙 **[Mon GitHub](https://github.com/Fadi1089)**
+📧 **[fadi.sultan.dev@gmail.com](mailto:fadi.sultan.dev@gmail.com)**
 
 ---
