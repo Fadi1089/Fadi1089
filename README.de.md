@@ -1,114 +1,85 @@
 <!-- 🇩🇪 Deutsche Version · Français (Standard): README.md · English: README.en.md -->
+<!-- Die Bilder in assets/ werden von scripts/generate_assets.py erzeugt -->
 
 <div align="center">
 
-![header](https://capsule-render.vercel.app/api?type=waving&color=0:1a1b27,50:3d59a1,100:70a5fd&height=220&section=header&text=Fadi%20SULTAN&fontSize=64&fontColor=ffffff&fontAlignY=36&animation=twinkling&desc=Entwickler%20%C2%B7%20Videospiele%20%C2%B7%203D%20%C2%B7%20Prozedurale%20Generierung&descSize=18&descAlignY=58)
+<a href="https://github.com/Fadi1089"><img src="assets/hero-de.svg" width="100%" alt="Fadi Sultan — Web- & Spieleentwickler, begeistert von 3D-Grafik und prozeduraler Generierung"></a>
 
 [🇫🇷 Français](https://github.com/Fadi1089/Fadi1089/blob/main/README.md) · [🇬🇧 English](https://github.com/Fadi1089/Fadi1089/blob/main/README.en.md) · **🇩🇪 Deutsch**
 
-[![Typing SVG](https://readme-typing-svg.demolab.com?font=Fira+Code&weight=600&size=22&pause=1200&color=70A5FD&center=true&vCenter=true&width=600&lines=Hallo+%21+Ich+bin+Fadi;Informatikstudent+%28BUT%29;Leidenschaft+f%C3%BCr+Videospiele;3D+%26+prozedurale+Generierung;Systemprogrammierung;Fran%C3%A7ais+%C2%B7+English+%C2%B7+Deutsch)](https://github.com/Fadi1089)
-
-[![Strasbourg](https://img.shields.io/badge/Stra%C3%9Fburg-Frankreich-3d59a1?style=flat-square&logo=googlemaps&logoColor=white)](#-kontakt)
-[![E-Mail](https://img.shields.io/badge/E--Mail-fadi.sultan.dev%40gmail.com-70a5fd?style=flat-square&logo=gmail&logoColor=white)](mailto:fadi.sultan.dev@gmail.com)
-[![Profilaufrufe](https://komarev.com/ghpvc/?username=Fadi1089&color=1a1b27&style=flat-square&label=Profilaufrufe)](https://github.com/Fadi1089)
+[![Email](https://img.shields.io/badge/fadi.sultan.dev%40gmail.com-0b0f1e?style=for-the-badge&logo=gmail&logoColor=7aa2f7)](mailto:fadi.sultan.dev@gmail.com)
+[![Profilaufrufe](https://komarev.com/ghpvc/?username=Fadi1089&color=7aa2f7&style=for-the-badge&label=PROFILAUFRUFE)](https://github.com/Fadi1089)
 
 </div>
 
----
+## 🧑‍💻 Wer bin ich?
 
-## 🚀 Über mich
+Im Alltag mache ich **Webentwicklung** und **Spieleentwicklung**, beruflich wie in eigenen Projekten. Im Web baue ich **Full-Stack-Anwendungen in TypeScript**, von der Oberfläche bis zur Datenbank. Bei Spielen reizt mich alles, was unter der Haube passiert: **3D-Grafik**, **Echtzeit-Rendering** und **prozedurale Generierung**, kleine, einfache Regeln, aus denen ganze Welten entstehen.
 
-Ich studiere **Informatik (BUT Informatique)** am **IUT Robert Schuman** (Universität Straßburg) und bin ein neugieriger, vielseitiger Entwickler: Mich interessiert die **Logik** eines Programms genauso sehr wie seine **Ästhetik**.
+Außerdem studiere ich **Informatik (BUT Informatique)** am IUT Robert Schuman in Straßburg.
 
-Was mich begeistert: **Spieleentwicklung**, **Systemprogrammierung**, **3D** und **prozedurale Algorithmen** — kleine, einfache Regeln, aus denen ganze Welten entstehen.
+<p align="center">
+  <img src="assets/about-de.svg" width="100%" alt="neofetch-Karte: Rolle, Studium, Web-Stack, Spiele und 3D, Sprachen, Kontakt">
+</p>
 
-```python
-class Fadi:
-    name         = "Fadi SULTAN"
-    wohnort      = "Straßburg, Frankreich"
-    studium      = "BUT Informatique @ IUT Robert Schuman"
-    sprachen     = ["Français", "English", "Deutsch"]
-    leidenschaft = ["Videospiele", "Systemprogrammierung", "3D", "Prozedurale Generierung"]
-    motto        = "Logik im Dienste der Ästhetik."
-```
+## 🎮 Ausgewählte Projekte
 
----
+<p align="center">
+  <a href="https://github.com/Fadi1089/CVie.fr"><img src="assets/project-cvie-de.svg" width="49%" alt="CVie.fr — ATS-kompatible Open-Source-Lebenslauf-Plattform"></a>
+  <a href="https://github.com/Fadi1089/Formio"><img src="assets/project-formio-de.svg" width="49%" alt="Formio — Google-Forms-Alternative mit Audioclips"></a>
+  <a href="https://github.com/Fadi1089/WFC-terrain-designer"><img src="assets/project-wfc-de.svg" width="49%" alt="WFC Terrain Designer — Blender-Add-on zur Geländegenerierung"></a>
+  <a href="https://github.com/Fadi1089/Adeli"><img src="assets/project-adeli-de.svg" width="49%" alt="Adeli — Kolonie-Management-Spiel in der Antarktis"></a>
+</p>
 
-## 🛠️ Kenntnisse
+<p align="center">
+  <a href="https://github.com/Fadi1089/WFC-terrain-designer"><img src="https://raw.githubusercontent.com/Fadi1089/WFC-terrain-designer/main/Terrain_render.png" width="80%" alt="Rendering eines mit WFC Terrain Designer erzeugten Geländes"></a>
+  <br>
+  <sub><i>Ein mit WFC Terrain Designer in Blender erzeugtes Gelände.</i></sub>
+</p>
+
+**Außerdem:** [Pokandemaths](https://github.com/Fadi1089/Pokandemaths) (Lernspiel im Pokémon-Stil, Java) · [KeepBoard](https://github.com/Fadi1089/KeepBoard) (Zwischenablage-Verlauf für Linux, Python) · [C-Network-Programming](https://github.com/Fadi1089/C-Network-Programming) (Netzwerkprogrammierung in C)
+
+## 🧰 Stack
 
 <div align="center">
 
-**Programmiersprachen**
-
-[![Programmiersprachen](https://skillicons.dev/icons?i=java,python,c,cs,php,css&theme=dark)](https://skillicons.dev)
-
-**Tools & Umgebungen**
-
-[![Tools](https://skillicons.dev/icons?i=linux,blender&theme=dark)](https://skillicons.dev)
-&nbsp;
-<img src="https://img.shields.io/badge/Inkscape-e0e0e0?style=for-the-badge&logo=inkscape&logoColor=080A13" alt="Inkscape" height="48">
-
-**Sprachen**
-
-![Français](https://img.shields.io/badge/Fran%C3%A7ais-3d59a1?style=for-the-badge)
-![English](https://img.shields.io/badge/English-3d59a1?style=for-the-badge)
-![Deutsch](https://img.shields.io/badge/Deutsch-3d59a1?style=for-the-badge)
+<table>
+  <tr><td><b>Front-end</b></td><td><img src="https://skillicons.dev/icons?i=ts,js,react,nextjs,tailwind,vite,html,css" height="40" alt="TypeScript, JavaScript, React, Next.js, Tailwind, Vite, HTML, CSS"></td></tr>
+  <tr><td><b>Back-end</b></td><td><img src="https://skillicons.dev/icons?i=nodejs,bun,express,prisma,postgres,supabase" height="40" alt="Node.js, Bun, Express, Prisma, PostgreSQL, Supabase"></td></tr>
+  <tr><td><b>Spiele & 3D</b></td><td><img src="https://skillicons.dev/icons?i=cs,blender,py,java" height="40" alt="C#, Blender, Python, Java"></td></tr>
+  <tr><td><b>Systeme & Tools</b></td><td><img src="https://skillicons.dev/icons?i=c,linux,git,figma" height="40" alt="C, Linux, Git, Figma"></td></tr>
+</table>
 
 </div>
 
----
+## 📊 Aktivität
 
-## 📌 Ausgewählte Projekte
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Fadi1089/Fadi1089/main/profile-3d-contrib/profile-night-rainbow.svg">
+    <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/Fadi1089/Fadi1089/main/profile-3d-contrib/profile-season.svg">
+    <img src="https://raw.githubusercontent.com/Fadi1089/Fadi1089/main/profile-3d-contrib/profile-night-rainbow.svg" width="100%" alt="3D-Beitragskalender">
+  </picture>
+</p>
 
-<div align="center">
-
-<a href="https://github.com/Fadi1089/WFC-terrain-designer"><img src="https://github-readme-stats-sigma-five.vercel.app/api/pin/?username=Fadi1089&repo=WFC-terrain-designer&theme=tokyonight&hide_border=true&locale=de" alt="WFC-terrain-designer" width="410"></a>
-<a href="https://github.com/Fadi1089/KeepBoard"><img src="https://github-readme-stats-sigma-five.vercel.app/api/pin/?username=Fadi1089&repo=KeepBoard&theme=tokyonight&hide_border=true&locale=de" alt="KeepBoard" width="410"></a>
-<a href="https://github.com/Fadi1089/Pokandemaths"><img src="https://github-readme-stats-sigma-five.vercel.app/api/pin/?username=Fadi1089&repo=Pokandemaths&theme=tokyonight&hide_border=true&locale=de" alt="Pokandemaths" width="410"></a>
-
-</div>
-
----
-
-## 📈 GitHub-Statistiken
-
-<div align="center">
-
-<img src="https://github-readme-stats-sigma-five.vercel.app/api?username=Fadi1089&show_icons=true&theme=tokyonight&hide_border=true&locale=de" alt="GitHub-Statistiken" height="170">
-<img src="https://github-readme-stats-sigma-five.vercel.app/api/top-langs/?username=Fadi1089&layout=compact&theme=tokyonight&hide_border=true&locale=de" alt="Meistgenutzte Sprachen" height="170">
-
-<img src="https://streak-stats.demolab.com?user=Fadi1089&theme=tokyonight&hide_border=true&locale=de" alt="Beitragsserie" width="600">
-
-<img src="https://github-readme-activity-graph.vercel.app/graph?username=Fadi1089&theme=tokyo-night&hide_border=true&area=true" alt="Aktivitätsgraph" width="100%">
+<p align="center">
+  <img src="metrics.languages.svg" alt="Meistgenutzte Sprachen">
+</p>
 
 <details>
-<summary><b>📊 Detaillierte Metriken anzeigen</b></summary>
+<summary><b>📈 Detaillierte Metriken anzeigen</b></summary>
 <br>
-
-<img src="https://raw.githubusercontent.com/Fadi1089/Fadi1089/main/github-metrics.svg" alt="Detaillierte GitHub-Metriken">
-
+<p align="center"><img src="github-metrics.svg" alt="Detaillierte GitHub-Metriken"></p>
 </details>
-
-</div>
-
----
-
-## 💬 Ein kleines Zitat zum Abschied
-
-> *„Pläne sind gut. Aber manchmal muss man einfach so tun, als wüsste man, was man tut.“*
-> — Jim Halpert
-
----
 
 ## 📬 Kontakt
 
-Ich unterhalte mich immer gern über **Videospiele**, **prozedurale Generierung** oder ein **spannendes Projekt** — auf Französisch, Englisch oder Deutsch. Ich bin nett 😀
+Ich rede immer gern über **Web**, **Spiele**, **3D** oder ein **spannendes Projekt**, auf Französisch, Englisch oder Deutsch. Ich bin nett 😀
 
 <div align="center">
 
-[![Gmail](https://img.shields.io/badge/Gmail-fadi.sultan.dev%40gmail.com-D14836?style=for-the-badge&logo=gmail&logoColor=white)](mailto:fadi.sultan.dev@gmail.com)
-[![GitHub](https://img.shields.io/badge/GitHub-Fadi1089-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Fadi1089)
+[![Gmail](https://img.shields.io/badge/Schreib%20mir-fadi.sultan.dev%40gmail.com-7aa2f7?style=for-the-badge&logo=gmail&logoColor=white&labelColor=0b0f1e)](mailto:fadi.sultan.dev@gmail.com)
+
+<sub><i>„Pläne sind gut. Aber manchmal muss man einfach so tun, als wüsste man, was man tut.“ — Jim Halpert</i></sub>
 
 </div>
-
-![footer](https://capsule-render.vercel.app/api?type=waving&color=0:70a5fd,50:3d59a1,100:1a1b27&height=120&section=footer)
