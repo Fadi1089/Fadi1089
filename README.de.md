@@ -59,7 +59,7 @@ Außerdem studiere ich **Informatik (BUT Informatique)** am IUT Robert Schuman i
 </p>
 
 <p align="center">
-  <img src="metrics.languages.svg" alt="Meistgenutzte Sprachen">
+  <img src="stats/overview-de.svg" width="100%" alt="Meistgenutzte Sprachen">
 </p>
 
 <details>

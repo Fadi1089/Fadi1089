@@ -59,7 +59,7 @@ I’m also a **Computer Science student (BUT Informatique)** at IUT Robert Schum
 </p>
 
 <p align="center">
-  <img src="metrics.languages.svg" alt="Most used languages">
+  <img src="stats/overview-en.svg" width="100%" alt="Most used languages">
 </p>
 
 <details>

@@ -59,7 +59,7 @@ Je suis aussi étudiant en **BUT Informatique** à l’IUT Robert Schuman (Stras
 </p>
 
 <p align="center">
-  <img src="metrics.languages.svg" alt="Langages les plus utilisés">
+  <img src="stats/overview-fr.svg" width="100%" alt="Langages les plus utilisés">
 </p>
 
 <details>
