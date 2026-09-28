@@ -72,7 +72,7 @@ def card(lang, data):
     langs = sorted(((k, v) for k, v in data["languages"].items() if k not in IGNORED),
                    key=lambda kv: -kv[1])
     total = sum(v for _, v in langs) or 1
-    top = langs[:TOP]
+    top = [kv for kv in langs[:TOP] if kv[1] / total >= 0.005]
     other = total - sum(v for _, v in top)
     if other / total >= 0.005:
         top.append(("…", other))
