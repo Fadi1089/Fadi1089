@@ -55,11 +55,7 @@ Je suis aussi étudiant en **BUT Informatique** à l’IUT Robert Schuman (Stras
 ## 📊 Activité
 
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Fadi1089/Fadi1089/main/profile-3d-contrib/profile-night-rainbow.svg">
-    <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/Fadi1089/Fadi1089/main/profile-3d-contrib/profile-season.svg">
-    <img src="https://raw.githubusercontent.com/Fadi1089/Fadi1089/main/profile-3d-contrib/profile-night-rainbow.svg" width="100%" alt="Calendrier de contributions en 3D">
-  </picture>
+  <img src="profile-3d-contrib/profile-night-rainbow.svg" width="100%" alt="Calendrier de contributions en 3D">
 </p>
 
 <p align="center">

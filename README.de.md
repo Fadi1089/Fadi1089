@@ -55,11 +55,7 @@ Außerdem studiere ich **Informatik (BUT Informatique)** am IUT Robert Schuman i
 ## 📊 Aktivität
 
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Fadi1089/Fadi1089/main/profile-3d-contrib/profile-night-rainbow.svg">
-    <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/Fadi1089/Fadi1089/main/profile-3d-contrib/profile-season.svg">
-    <img src="https://raw.githubusercontent.com/Fadi1089/Fadi1089/main/profile-3d-contrib/profile-night-rainbow.svg" width="100%" alt="3D-Beitragskalender">
-  </picture>
+  <img src="profile-3d-contrib/profile-night-rainbow.svg" width="100%" alt="3D-Beitragskalender">
 </p>
 
 <p align="center">
