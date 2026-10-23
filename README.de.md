@@ -19,20 +19,17 @@ Im Alltag mache ich **Webentwicklung** und **Spieleentwicklung**, beruflich wie 
 Außerdem studiere ich **Informatik (BUT Informatique)** am IUT Robert Schuman in Straßburg.
 
 <p align="center">
-  <img src="assets/about-de.svg" width="100%" alt="neofetch-Karte: Rolle, Studium, Web-Stack, Spiele und 3D, Sprachen, Kontakt, mit einem animierten Rubik’s Cube, der sich mischt und wieder löst">
+  <img src="assets/about-de.svg" width="100%" alt="neofetch-Karte: Rolle, Studium, Web-Stack, Spiele und 3D, Sprachen, Kontakt, mit einem animierten Rubik’s Cube, der sich ständig dreht">
 </p>
 
 ## 🎮 Ausgewählte Projekte
-
-<p align="center">
-  <a href="https://fadi1089.github.io/Rubik/"><img src="assets/project-rubik-de.svg" width="100%" alt="Rubik’s Cube — ein 3D-Rubik’s-Cube im Browser, mit Timer, Anleitungen und Schritt-für-Schritt-Löser"></a>
-</p>
 
 <p align="center">
   <a href="https://github.com/Fadi1089/CVie.fr"><img src="assets/project-cvie-de.svg" width="49%" alt="CVie.fr — ATS-kompatible Open-Source-Lebenslauf-Plattform"></a>
   <a href="https://github.com/Fadi1089/Formio"><img src="assets/project-formio-de.svg" width="49%" alt="Formio — Google-Forms-Alternative mit Audioclips"></a>
   <a href="https://github.com/Fadi1089/WFC-terrain-designer"><img src="assets/project-wfc-de.svg" width="49%" alt="WFC Terrain Designer — Blender-Add-on zur Geländegenerierung"></a>
   <a href="https://github.com/Fadi1089/Adeli"><img src="assets/project-adeli-de.svg" width="49%" alt="Adeli — Kolonie-Management-Spiel in der Antarktis"></a>
+  <a href="https://github.com/Fadi1089/Rubik"><img src="assets/project-rubik-de.svg" width="49%" alt="Rubik’s Cube — 3D-Rubik’s-Cube zum Spielen im Browser"></a>
 </p>
 
 <p align="center">

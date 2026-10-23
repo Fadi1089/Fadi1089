@@ -19,20 +19,17 @@ Day to day, I do **web development** and **game development**, both at work and 
 I’m also a **Computer Science student (BUT Informatique)** at IUT Robert Schuman in Strasbourg.
 
 <p align="center">
-  <img src="assets/about-en.svg" width="100%" alt="neofetch card: role, studies, web stack, games and 3D, languages, contact, with an animated Rubik’s Cube scrambling and solving itself">
+  <img src="assets/about-en.svg" width="100%" alt="neofetch card: role, studies, web stack, games and 3D, languages, contact, with an animated Rubik’s Cube turning at random">
 </p>
 
 ## 🎮 Featured projects
-
-<p align="center">
-  <a href="https://fadi1089.github.io/Rubik/"><img src="assets/project-rubik-en.svg" width="100%" alt="Rubik’s Cube — a 3D Rubik’s Cube in the browser, with a timer, guides and a step-by-step solver"></a>
-</p>
 
 <p align="center">
   <a href="https://github.com/Fadi1089/CVie.fr"><img src="assets/project-cvie-en.svg" width="49%" alt="CVie.fr — open-source, ATS-friendly CV platform"></a>
   <a href="https://github.com/Fadi1089/Formio"><img src="assets/project-formio-en.svg" width="49%" alt="Formio — Google Forms alternative with audio clips"></a>
   <a href="https://github.com/Fadi1089/WFC-terrain-designer"><img src="assets/project-wfc-en.svg" width="49%" alt="WFC Terrain Designer — Blender terrain generation add-on"></a>
   <a href="https://github.com/Fadi1089/Adeli"><img src="assets/project-adeli-en.svg" width="49%" alt="Adeli — colony management game set in Antarctica"></a>
+  <a href="https://github.com/Fadi1089/Rubik"><img src="assets/project-rubik-en.svg" width="49%" alt="Rubik’s Cube — a 3D Rubik’s Cube you can play in the browser"></a>
 </p>
 
 <p align="center">

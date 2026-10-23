@@ -40,11 +40,7 @@ TEXT = {
         "chips": ["Web full-stack", "Game dev", "3D", "Procédural"],
         "place": "Strasbourg · France",
         "caption": "île générée procéduralement · seed 1089",
-        "cube_alt": "Rubik’s Cube animé qui se mélange puis se résout",
-        "rubik": ("WEB · 3D · JEU · PROJET PHARE",
-                  "Un Rubik’s Cube 3D dans le navigateur, qui t’apprend aussi à le résoudre : tourne les faces",
-                  "à la souris ou au clavier, chronomètre tes solves, ou suis le tuteur coup par coup.",
-                  "Jouer dans le navigateur"),
+        "cube_alt": "Rubik’s Cube animé qui tourne sans arrêt",
         "about": [
             ("Rôle", "Développeur Web & Jeux vidéo"),
             ("Études", "BUT Informatique · IUT Robert Schuman"),
@@ -66,6 +62,8 @@ TEXT = {
                     "l’algorithme Wave Function Collapse."),
             "adeli": ("JEU VIDÉO · EN DÉVELOPPEMENT", "Jeu de gestion de colonie en Antarctique :",
                       "ressources, équipe, missions et survie."),
+            "rubik": ("WEB · 3D · JEU", "Un Rubik’s Cube 3D jouable dans le navigateur,",
+                      "avec chrono, guides et solveur pas à pas."),
         },
     },
     "en": {
@@ -76,11 +74,7 @@ TEXT = {
         "chips": ["Full-stack web", "Game dev", "3D", "Procedural"],
         "place": "Strasbourg · France",
         "caption": "procedurally generated island · seed 1089",
-        "cube_alt": "animated Rubik’s Cube scrambling itself and solving again",
-        "rubik": ("WEB · 3D · GAME · FEATURED",
-                  "A 3D Rubik’s Cube for the browser that also teaches you to solve it: drag a face or use",
-                  "the keyboard, race the timer, or let the guided solve walk you through it move by move.",
-                  "Play it in your browser"),
+        "cube_alt": "animated Rubik’s Cube turning at random",
         "about": [
             ("Role", "Web & Game Developer"),
             ("Studies", "BUT Informatique (CS) · IUT Robert Schuman"),
@@ -102,6 +96,8 @@ TEXT = {
                     "Wave Function Collapse algorithm."),
             "adeli": ("VIDEO GAME · IN DEVELOPMENT", "Colony management game set in Antarctica:",
                       "resources, staff, missions and survival."),
+            "rubik": ("WEB · 3D · GAME", "A 3D Rubik’s Cube you can play in the browser,",
+                      "with a timer, guides and a step-by-step solver."),
         },
     },
     "de": {
@@ -112,11 +108,7 @@ TEXT = {
         "chips": ["Full-Stack-Web", "Game Dev", "3D", "Prozedural"],
         "place": "Straßburg · Frankreich",
         "caption": "prozedural generierte Insel · Seed 1089",
-        "cube_alt": "animierter Rubik’s Cube, der sich mischt und wieder löst",
-        "rubik": ("WEB · 3D · SPIEL · HIGHLIGHT",
-                  "Ein 3D-Rubik’s-Cube im Browser, der dir auch das Lösen beibringt: Flächen per Maus oder",
-                  "Tastatur drehen, gegen die Uhr spielen oder dem Tutor Zug für Zug folgen.",
-                  "Im Browser spielen"),
+        "cube_alt": "animierter Rubik’s Cube, der sich ständig dreht",
         "about": [
             ("Rolle", "Web- & Spieleentwickler"),
             ("Studium", "BUT Informatique · IUT Robert Schuman"),
@@ -138,6 +130,8 @@ TEXT = {
                     "Wave-Function-Collapse-Algorithmus."),
             "adeli": ("VIDEOSPIEL · IN ENTWICKLUNG", "Kolonie-Management-Spiel in der Antarktis:",
                       "Ressourcen, Personal, Missionen, Überleben."),
+            "rubik": ("WEB · 3D · SPIEL", "Ein 3D-Rubik’s-Cube zum Spielen im Browser,",
+                      "mit Timer, Anleitungen und Schritt-für-Schritt-Löser."),
         },
     },
 }
@@ -149,19 +143,12 @@ PROJECTS = {
                "tech": ["Next.js", "Express", "TypeScript", "Prisma", "Supabase"]},
     "wfc": {"title": "WFC Terrain Designer", "color": GREEN,
             "tech": ["Python", "Blender 3.0+", "Wave Function Collapse"]},
-    # Rubik gets a wide banner of its own rather than a slot in the grid.
     "adeli": {"title": "Adeli", "color": ORANGE,
               "tech": {"fr": ["Game design", "Simulation", "Stratégie"],
                        "en": ["Game design", "Simulation", "Strategy"],
                        "de": ["Game Design", "Simulation", "Strategie"]}},
-}
-
-
-RUBIK = {
-    "title": "Rubik’s Cube",
-    "color": ACCENT_2,
-    "url": "fadi1089.github.io/Rubik",
-    "tech": ["React 19", "TypeScript", "Three.js", "R3F", "Zustand", "Tailwind v4", "Vite"],
+    "rubik": {"title": "Rubik’s Cube", "color": ACCENT_2,
+              "tech": ["React 19", "TypeScript", "Three.js", "R3F", "Zustand", "Tailwind v4"]},
 }
 
 
@@ -376,8 +363,8 @@ STEP = 0.026       # seconds per turning frame
 HOLDS = (0.10, 0.17, 0.25)   # how long a settled cube waits, picked per move
 PAD = 0.006        # frames overlap by a hair, so rounding never blanks one
 
-STICKER = 0.425    # half a sticker, in cubie widths; the rest is the gap
-ROUNDING = 10      # stroke width that rounds the sticker corners off
+STICKER = 0.47     # half a sticker, in cubie widths; the rest is the gap
+GRID = 2.4         # dark stroke between stickers, the cube's plastic
 LIGHT = (-0.30, 0.86, 0.41)
 SHADES = (0.58, 0.75, 0.92, 1.08)
 CLASS_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -507,12 +494,6 @@ def _quad_path(pts):
     return out + "Z"
 
 
-def still_cube(cubies, move, t, cx, cy, scale):
-    """One frozen frame, both halves in the order the camera wants them."""
-    still, turning = _parts(cubies, move, t, cx, cy, scale)
-    return still + turning if _dot(_layer(move)[0], CAM_E) > 0 else turning + still
-
-
 def _ease(u):
     return u * u * (3 - 2 * u)
 
@@ -569,7 +550,7 @@ def about(lang):
         start += hold + turn
         _apply(cubies, move)
 
-    swatches = "".join(f".{n}{{fill:{c};stroke:{c}}}" for c, n in classes.items())
+    swatches = "".join(f".{n}{{fill:{c}}}" for c, n in classes.items())
     windows = "".join(
         f'  .hd{k} {{ animation: kd{k} {total:.3f}s linear infinite; }}\n'
         f'  .sg{k} {{ animation: kg{k} {total:.3f}s linear infinite; }}\n'
@@ -626,7 +607,7 @@ def about(lang):
 <circle cx="24" cy="18" r="6" fill="#f7768e"/><circle cx="44" cy="18" r="6" fill="#e0af68"/><circle cx="64" cy="18" r="6" fill="{GREEN}"/>
 <text x="{W / 2}" y="23" text-anchor="middle" class="bar">fadi@strasbourg: ~ — neofetch</text>
 <ellipse cx="{cx}" cy="404" rx="130" ry="14" fill="{ACCENT}" fill-opacity="0.12"/>
-<g stroke-width="{ROUNDING}" stroke-linejoin="round">{"".join(moves_svg)}</g>
+<g stroke="{BG_0}" stroke-width="{GRID}" stroke-linejoin="round">{"".join(moves_svg)}</g>
 <text x="500" y="72" class="host">fadi<tspan class="at">@</tspan>strasbourg</text>
 <path d="M500 82H760" stroke="{MUTED}" stroke-opacity="0.5" stroke-dasharray="4 4"/>
 {"".join(lines)}
@@ -686,75 +667,11 @@ def project_card(lang, key):
 '''
 
 
-def rubik_card(lang):
-    """Wide banner for the featured project, with a cube caught mid-turn."""
-    label, line1, line2, cta = TEXT[lang]["rubik"]
-    W, H = 1200, 260
-    c = RUBIK["color"]
-
-    cubies = _solved_cube()
-    for move in ("R", "U'", "F"):
-        _apply(cubies, move)
-    cube = "".join(f'<path fill="{colour}" stroke="{colour}" d="{_quad_path(pts)}"/>'
-                   for colour, pts in still_cube(cubies, "L'", 0, 1040, 118, 44))
-
-    chips, x = [], 36
-    for tech in RUBIK["tech"]:
-        w = 18 + len(tech) * 7.4
-        chips.append(
-            f'<g transform="translate({x:.0f} 180)"><rect width="{w:.0f}" height="26" rx="6" fill="{c}" fill-opacity="0.12"/>'
-            f'<text x="{w / 2:.0f}" y="17.5" text-anchor="middle" class="chip">{t(tech)}</text></g>'
-        )
-        x += w + 8
-
-    pill = 64 + len(cta) * 8.3
-    return f'''<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}" role="img" aria-label="{t(RUBIK["title"])} — {t(line1)}">
-<title>{t(RUBIK["title"])}</title>
-<defs>
-  <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-    <stop offset="0" stop-color="{BG_1}"/><stop offset="1" stop-color="{BG_0}"/>
-  </linearGradient>
-  <radialGradient id="h" cx="0.86" cy="0.4" r="0.55">
-    <stop offset="0" stop-color="{c}" stop-opacity="0.26"/><stop offset="1" stop-color="{c}" stop-opacity="0"/>
-  </radialGradient>
-</defs>
-<style>
-  .label {{ font: 700 12px {MONO}; fill: {c}; letter-spacing: 1.5px; }}
-  .title {{ font: 800 34px {SANS}; fill: {INK}; }}
-  .desc {{ font: 400 17px {SANS}; fill: {MUTED}; }}
-  .chip {{ font: 600 12px {MONO}; fill: {c}; }}
-  .cta {{ font: 700 15px {SANS}; fill: {c}; }}
-  .url {{ font: 400 12px {MONO}; fill: {MUTED}; }}
-  .arrow {{ fill: none; stroke: {c}; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }}
-</style>
-<rect width="{W}" height="{H}" rx="16" fill="url(#g)"/>
-<rect width="{W}" height="{H}" rx="16" fill="url(#h)"/>
-<rect x=".5" y=".5" width="{W - 1}" height="{H - 1}" rx="16" fill="none" stroke="{c}" stroke-opacity="0.35"/>
-<rect x="36" y="0" width="64" height="4" rx="2" fill="{c}"/>
-<ellipse cx="1040" cy="214" rx="82" ry="10" fill="{c}" fill-opacity="0.13"/>
-<g stroke-width="5" stroke-linejoin="round">{cube}</g>
-<text x="36" y="48" class="label">{t(label)}</text>
-<text x="36" y="94" class="title">{t(RUBIK["title"])}</text>
-<path class="arrow" d="M{W - 56} 42l14-14M{W - 52} 28h10v10"/>
-<text x="36" y="132" class="desc">{t(line1)}</text>
-<text x="36" y="157" class="desc">{t(line2)}</text>
-{"".join(chips)}
-<g transform="translate(36 216)">
-  <rect width="{pill:.0f}" height="32" rx="16" fill="{c}" fill-opacity="0.14" stroke="{c}" stroke-opacity="0.5"/>
-  <path d="M26 10l12 6-12 6z" fill="{c}"/>
-  <text x="48" y="21" class="cta">{t(cta)}</text>
-</g>
-<text x="{36 + pill + 14:.0f}" y="237" class="url">{t(RUBIK["url"])}</text>
-</svg>
-'''
-
-
 def main():
     OUT.mkdir(exist_ok=True)
     for lang in TEXT:
         (OUT / f"hero-{lang}.svg").write_text(hero(lang), encoding="utf-8")
         (OUT / f"about-{lang}.svg").write_text(about(lang), encoding="utf-8")
-        (OUT / f"project-rubik-{lang}.svg").write_text(rubik_card(lang), encoding="utf-8")
         for key in PROJECTS:
             (OUT / f"project-{key}-{lang}.svg").write_text(project_card(lang, key), encoding="utf-8")
     print(f"wrote assets to {OUT}")

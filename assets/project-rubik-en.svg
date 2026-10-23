@@ -1,38 +1,28 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="260" viewBox="0 0 1200 260" role="img" aria-label="Rubik’s Cube — A 3D Rubik’s Cube for the browser that also teaches you to solve it: drag a face or use">
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="230" viewBox="0 0 600 230" role="img" aria-label="Rubik’s Cube">
 <title>Rubik’s Cube</title>
 <defs>
   <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
     <stop offset="0" stop-color="#141a33"/><stop offset="1" stop-color="#0b0f1e"/>
   </linearGradient>
-  <radialGradient id="h" cx="0.86" cy="0.4" r="0.55">
-    <stop offset="0" stop-color="#bb9af7" stop-opacity="0.26"/><stop offset="1" stop-color="#bb9af7" stop-opacity="0"/>
+  <radialGradient id="h" cx="1" cy="0" r="0.8">
+    <stop offset="0" stop-color="#bb9af7" stop-opacity="0.25"/><stop offset="1" stop-color="#bb9af7" stop-opacity="0"/>
   </radialGradient>
 </defs>
 <style>
   .label { font: 700 12px ui-monospace, SFMono-Regular, 'JetBrains Mono', Menlo, Consolas, 'DejaVu Sans Mono', 'Liberation Mono', monospace; fill: #bb9af7; letter-spacing: 1.5px; }
-  .title { font: 800 34px 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Ubuntu, Arial, sans-serif; fill: #e6e9f5; }
+  .title { font: 800 30px 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Ubuntu, Arial, sans-serif; fill: #e6e9f5; }
   .desc { font: 400 17px 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Ubuntu, Arial, sans-serif; fill: #8b93b8; }
   .chip { font: 600 12px ui-monospace, SFMono-Regular, 'JetBrains Mono', Menlo, Consolas, 'DejaVu Sans Mono', 'Liberation Mono', monospace; fill: #bb9af7; }
-  .cta { font: 700 15px 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Ubuntu, Arial, sans-serif; fill: #bb9af7; }
-  .url { font: 400 12px ui-monospace, SFMono-Regular, 'JetBrains Mono', Menlo, Consolas, 'DejaVu Sans Mono', 'Liberation Mono', monospace; fill: #8b93b8; }
   .arrow { fill: none; stroke: #bb9af7; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
 </style>
-<rect width="1200" height="260" rx="16" fill="url(#g)"/>
-<rect width="1200" height="260" rx="16" fill="url(#h)"/>
-<rect x=".5" y=".5" width="1199" height="259" rx="16" fill="none" stroke="#bb9af7" stroke-opacity="0.35"/>
-<rect x="36" y="0" width="64" height="4" rx="2" fill="#bb9af7"/>
-<ellipse cx="1040" cy="214" rx="82" ry="10" fill="#bb9af7" fill-opacity="0.13"/>
-<g stroke-width="5" stroke-linejoin="round"><path fill="#0c0f1b" stroke="#0c0f1b" d="M1050 141l-16 14 0-29 16-13Z"/><path fill="#0c0f1b" stroke="#0c0f1b" d="M1031 157l-18 16-1-30 19-15Z"/><path fill="#abde72" stroke="#abde72" d="M969 51l33 6-26 12-34-7Z"/><path fill="#0c0f1b" stroke="#0c0f1b" d="M1007 99l-25 15-3-41 26-12Z"/><path fill="#b9596b" stroke="#b9596b" d="M944 105l33 9-3-40-34-8Z"/><path fill="#0c0f1b" stroke="#0c0f1b" d="M1051 108l-17 12 0-32 17-10Z"/><path fill="#0c0f1b" stroke="#0c0f1b" d="M1031 123l-19 14-1-34 20-13Z"/><path fill="#0c0f1b" stroke="#0c0f1b" d="M1008 140l-23 17-2-37 24-15Z"/><path fill="#b9596b" stroke="#b9596b" d="M949 147l31 10-3-36-32-9Z"/><path fill="#ffffff" stroke="#ffffff" d="M997 41l30 4-21 10-32-6Z"/><path fill="#0c0f1b" stroke="#0c0f1b" d="M1031 84l-21 13-1-38 21-10Z"/><path fill="#0c0f1b" stroke="#0c0f1b" d="M1010 177l-22 19-2-33 22-18Z"/><path fill="#a8834e" stroke="#a8834e" d="M954 185l29 11-2-32-31-11Z"/><path fill="#ff7f99" stroke="#ff7f99" d="M1020 32l29 4-18 8-31-5Z"/><path fill="#0c0f1b" stroke="#0c0f1b" d="M1051 72l-17 10 0-34 17-9Z"/><path fill="#abde72" stroke="#abde72" d="M1008 58l36 7-23 13-39-8Z"/><path fill="#b9596b" stroke="#b9596b" d="M983 116l37 10-2-43-38-8Z"/><path fill="#ffab6c" stroke="#ffab6c" d="M1051 66l41 7-21 15-43-9Z"/><path fill="#8c8e94" stroke="#8c8e94" d="M1093 120l-20 18 2-45 20-15Z"/><path fill="#779b50" stroke="#779b50" d="M1026 128l42 11 1-45-43-9Z"/><path fill="#8c8e94" stroke="#8c8e94" d="M1090 164l-19 21 2-40 19-19Z"/><path fill="#779b50" stroke="#779b50" d="M1027 173l39 13 1-40-41-11Z"/><path fill="#8c8e94" stroke="#8c8e94" d="M1087 203l-17 24 1-35 18-22Z"/><path fill="#779b50" stroke="#779b50" d="M1028 213l37 15 1-36-39-13Z"/><path fill="#b9596b" stroke="#b9596b" d="M986 159l35 12-1-38-36-10Z"/><path fill="#ffffff" stroke="#ffffff" d="M1033 46l34 6-19 11-36-7Z"/><path fill="#ffffff" stroke="#ffffff" d="M1073 53l38 6-16 12-40-7Z"/><path fill="#8f4452" stroke="#8f4452" d="M1111 102l-15 15 2-41 17-13Z"/><path fill="#a8834e" stroke="#a8834e" d="M989 198l33 13-1-34-35-11Z"/><path fill="#ff7f99" stroke="#ff7f99" d="M1092 42l35 5-13 10-38-6Z"/><path fill="#82663c" stroke="#82663c" d="M1127 87l-13 12 3-38 13-10Z"/><path fill="#475e8f" stroke="#475e8f" d="M1104 180l-14 19 2-33 15-18Z"/><path fill="#475e8f" stroke="#475e8f" d="M1108 143l-15 17 2-37 16-15Z"/><path fill="#ff7f99" stroke="#ff7f99" d="M1054 37l32 4-16 9-34-5Z"/><path fill="#475e8f" stroke="#475e8f" d="M1119 160l-12 17 3-31 12-16Z"/><path fill="#475e8f" stroke="#475e8f" d="M1123 125l-13 15 3-35 13-12Z"/></g>
-<text x="36" y="48" class="label">WEB · 3D · GAME · FEATURED</text>
-<text x="36" y="94" class="title">Rubik’s Cube</text>
-<path class="arrow" d="M1144 42l14-14M1148 28h10v10"/>
-<text x="36" y="132" class="desc">A 3D Rubik’s Cube for the browser that also teaches you to solve it: drag a face or use</text>
-<text x="36" y="157" class="desc">the keyboard, race the timer, or let the guided solve walk you through it move by move.</text>
-<g transform="translate(36 180)"><rect width="77" height="26" rx="6" fill="#bb9af7" fill-opacity="0.12"/><text x="39" y="17.5" text-anchor="middle" class="chip">React 19</text></g><g transform="translate(121 180)"><rect width="92" height="26" rx="6" fill="#bb9af7" fill-opacity="0.12"/><text x="46" y="17.5" text-anchor="middle" class="chip">TypeScript</text></g><g transform="translate(221 180)"><rect width="77" height="26" rx="6" fill="#bb9af7" fill-opacity="0.12"/><text x="39" y="17.5" text-anchor="middle" class="chip">Three.js</text></g><g transform="translate(306 180)"><rect width="40" height="26" rx="6" fill="#bb9af7" fill-opacity="0.12"/><text x="20" y="17.5" text-anchor="middle" class="chip">R3F</text></g><g transform="translate(355 180)"><rect width="70" height="26" rx="6" fill="#bb9af7" fill-opacity="0.12"/><text x="35" y="17.5" text-anchor="middle" class="chip">Zustand</text></g><g transform="translate(432 180)"><rect width="99" height="26" rx="6" fill="#bb9af7" fill-opacity="0.12"/><text x="50" y="17.5" text-anchor="middle" class="chip">Tailwind v4</text></g><g transform="translate(540 180)"><rect width="48" height="26" rx="6" fill="#bb9af7" fill-opacity="0.12"/><text x="24" y="17.5" text-anchor="middle" class="chip">Vite</text></g>
-<g transform="translate(36 216)">
-  <rect width="255" height="32" rx="16" fill="#bb9af7" fill-opacity="0.14" stroke="#bb9af7" stroke-opacity="0.5"/>
-  <path d="M26 10l12 6-12 6z" fill="#bb9af7"/>
-  <text x="48" y="21" class="cta">Play it in your browser</text>
-</g>
-<text x="305" y="237" class="url">fadi1089.github.io/Rubik</text>
+<rect width="600" height="230" rx="16" fill="url(#g)"/>
+<rect width="600" height="230" rx="16" fill="url(#h)"/>
+<rect x=".5" y=".5" width="599" height="229" rx="16" fill="none" stroke="#bb9af7" stroke-opacity="0.35"/>
+<rect x="32" y="0" width="64" height="4" rx="2" fill="#bb9af7"/>
+<text x="32" y="44" class="label">WEB · 3D · GAME</text>
+<text x="32" y="86" class="title">Rubik’s Cube</text>
+<path class="arrow" d="M544 38l14-14M548 24h10v10"/>
+<text x="32" y="122" class="desc">A 3D Rubik’s Cube you can play in the browser,</text>
+<text x="32" y="147" class="desc">with a timer, guides and a step-by-step solver.</text>
+<g transform="translate(32 172)"><rect width="77" height="26" rx="6" fill="#bb9af7" fill-opacity="0.12"/><text x="39" y="17.5" text-anchor="middle" class="chip">React 19</text></g><g transform="translate(117 172)"><rect width="92" height="26" rx="6" fill="#bb9af7" fill-opacity="0.12"/><text x="46" y="17.5" text-anchor="middle" class="chip">TypeScript</text></g><g transform="translate(217 172)"><rect width="77" height="26" rx="6" fill="#bb9af7" fill-opacity="0.12"/><text x="39" y="17.5" text-anchor="middle" class="chip">Three.js</text></g><g transform="translate(302 172)"><rect width="40" height="26" rx="6" fill="#bb9af7" fill-opacity="0.12"/><text x="20" y="17.5" text-anchor="middle" class="chip">R3F</text></g><g transform="translate(351 172)"><rect width="70" height="26" rx="6" fill="#bb9af7" fill-opacity="0.12"/><text x="35" y="17.5" text-anchor="middle" class="chip">Zustand</text></g><g transform="translate(428 172)"><rect width="99" height="26" rx="6" fill="#bb9af7" fill-opacity="0.12"/><text x="50" y="17.5" text-anchor="middle" class="chip">Tailwind v4</text></g>
 </svg>
