@@ -8,6 +8,7 @@ depend on third-party card services. Run from the repo root:
 """
 
 import math
+import random
 from pathlib import Path
 from xml.sax.saxutils import escape
 
@@ -39,8 +40,6 @@ TEXT = {
         "chips": ["Web full-stack", "Game dev", "3D", "Procédural"],
         "place": "Strasbourg · France",
         "caption": "île générée procéduralement · seed 1089",
-        "scrambling": "mélange",
-        "solving": "résolution",
         "cube_alt": "Rubik’s Cube animé qui se mélange puis se résout",
         "rubik": ("WEB · 3D · JEU · PROJET PHARE",
                   "Un Rubik’s Cube 3D dans le navigateur, qui t’apprend aussi à le résoudre : tourne les faces",
@@ -77,8 +76,6 @@ TEXT = {
         "chips": ["Full-stack web", "Game dev", "3D", "Procedural"],
         "place": "Strasbourg · France",
         "caption": "procedurally generated island · seed 1089",
-        "scrambling": "scrambling",
-        "solving": "solving",
         "cube_alt": "animated Rubik’s Cube scrambling itself and solving again",
         "rubik": ("WEB · 3D · GAME · FEATURED",
                   "A 3D Rubik’s Cube for the browser that also teaches you to solve it: drag a face or use",
@@ -115,8 +112,6 @@ TEXT = {
         "chips": ["Full-Stack-Web", "Game Dev", "3D", "Prozedural"],
         "place": "Straßburg · Frankreich",
         "caption": "prozedural generierte Insel · Seed 1089",
-        "scrambling": "mischen",
-        "solving": "lösen",
         "cube_alt": "animierter Rubik’s Cube, der sich mischt und wieder löst",
         "rubik": ("WEB · 3D · SPIEL · HIGHLIGHT",
                   "Ein 3D-Rubik’s-Cube im Browser, der dir auch das Lösen beibringt: Flächen per Maus oder",
@@ -350,8 +345,15 @@ def hero(lang):
 # neofetch-style "about" card with a self-scrambling Rubik's cube
 #
 # The cube is the one from github.com/Fadi1089/Rubik. Every frame is baked
-# here and shown in turn with a CSS animation, so the SVG stays static:
-# no script, which is what GitHub's image pipeline allows.
+# here and shown in turn with a CSS animation, so the SVG stays static: no
+# script, which is what GitHub's image pipeline allows.
+#
+# A turn only moves one layer, and that layer sits entirely on one side of a
+# plane the rest of the cube never crosses, so from a fixed camera it is
+# either always in front of the rest or always behind it. That means the two
+# halves can be drawn in a fixed order, the still half can be emitted once per
+# move instead of once per frame, and neither half needs sorting: both are
+# convex, so the faces turned towards the camera cannot overlap each other.
 # --------------------------------------------------------------------------
 
 CUBE_FACES = {
@@ -366,18 +368,19 @@ PLASTIC = "#141a2e"
 DIRS = [n for n, _ in CUBE_FACES.values()]
 IDENTITY = ((1, 0, 0), (0, 1, 0), (0, 0, 1))
 
-# Scramble played forwards, then undone move by move, so the loop is seamless
-# and the cube is solved every time it comes back round.
-SCRAMBLE = ["R", "U'", "F", "L'", "U", "B'"]
-TURN_STEPS = 6     # frames per quarter turn
-HOLD = 0.16        # seconds a settled cube stays on screen
-STEP = 0.045       # seconds per turning frame
+SEED = 1089        # the cube turns at random, but the same random every run
+OPENING = 12       # moves applied before the loop, so it never looks solved
+WALK = 8           # random moves, then walked back, so the loop is seamless
+FRAMES = 10        # frames per quarter turn
+STEP = 0.026       # seconds per turning frame
+HOLDS = (0.10, 0.17, 0.25)   # how long a settled cube waits, picked per move
 PAD = 0.006        # frames overlap by a hair, so rounding never blanks one
 
+STICKER = 0.425    # half a sticker, in cubie widths; the rest is the gap
+ROUNDING = 10      # stroke width that rounds the sticker corners off
 LIGHT = (-0.30, 0.86, 0.41)
 SHADES = (0.58, 0.75, 0.92, 1.08)
 CLASS_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-PRIME = "\u2032"
 
 
 def _dot(a, b):
@@ -424,8 +427,7 @@ def _project(p, cx, cy, scale):
 
 
 def _shaded(colour, normal):
-    lit = max(0.0, _dot(normal, LIGHT))
-    f = SHADES[min(3, int(lit * 4))]
+    f = SHADES[min(3, int(max(0.0, _dot(normal, LIGHT)) * 4))]
     rgb = (int(colour[1:3], 16), int(colour[3:5], 16), int(colour[5:7], 16))
     return "#%02x%02x%02x" % tuple(min(255, int(v * f + 0.5)) for v in rgb)
 
@@ -465,23 +467,21 @@ def _face_basis(n):
     return (1, 0, 0), (0, 1, 0)
 
 
-def _facelets(cubies, move, t, cx, cy, scale):
-    """Every face of the cube the camera can see, back to front."""
-    axis = r = None
-    if move and t > 0:
-        axis, r = _layer(move, t)
-    moving = {cb[0]: (1 if axis and _dot(cb[0], axis) > 0.5 else 0) for cb in cubies}
-    moving[(0, 0, 0)] = 0
+def _parts(cubies, move, t, cx, cy, scale):
+    """The faces the camera can see, split into the still half and the turning one."""
+    axis, r = _layer(move, t)
+    side = {cb[0]: (1 if _dot(cb[0], axis) > 0.5 else 0) for cb in cubies}
+    side[(0, 0, 0)] = 0
 
-    quads, half = [], 0.47
+    out = ([], [])
     for pos, rot, stickers in cubies:
-        turning = moving[pos]
+        turning = side[pos]
         wpos = _mv(r, pos) if turning else pos
         # Which way each sticker points now that the cubie has been turned about.
         skins = {tuple(int(round(v)) for v in _mv(rot, n)): c for n, c in stickers}
         for d in DIRS:
             nb = (pos[0] + d[0], pos[1] + d[1], pos[2] + d[2])
-            if moving.get(nb, -1) == turning:
+            if side.get(nb, -1) == turning:
                 continue                               # buried against a neighbour
             normal = _mv(r, d) if turning else d
             if _dot(normal, CAM_E) <= 0.03:
@@ -490,12 +490,11 @@ def _facelets(cubies, move, t, cx, cy, scale):
             if turning:
                 u, v = _mv(r, u), _mv(r, v)
             centre = tuple(wpos[k] + normal[k] * 0.5 for k in range(3))
-            pts = [_project(tuple(centre[k] + u[k] * a * half + v[k] * b * half for k in range(3)),
+            pts = [_project(tuple(centre[k] + (u[k] * a + v[k] * b) * STICKER for k in range(3)),
                             cx, cy, scale)
                    for a, b in ((-1, -1), (1, -1), (1, 1), (-1, 1))]
-            quads.append((_dot(centre, CAM_E), _shaded(skins.get(d, PLASTIC), normal), pts))
-    quads.sort(key=lambda q: q[0])
-    return [(c, p) for _, c, p in quads]
+            out[turning].append((_shaded(skins.get(d, PLASTIC), normal), pts))
+    return out
 
 
 def _quad_path(pts):
@@ -508,53 +507,77 @@ def _quad_path(pts):
     return out + "Z"
 
 
-def rubik_sequence():
-    """The scramble, then its inverse — the cube ends where it started."""
-    inverse = [m[0] if m.endswith("'") else m + "'" for m in reversed(SCRAMBLE)]
-    return SCRAMBLE + inverse
+def still_cube(cubies, move, t, cx, cy, scale):
+    """One frozen frame, both halves in the order the camera wants them."""
+    still, turning = _parts(cubies, move, t, cx, cy, scale)
+    return still + turning if _dot(_layer(move)[0], CAM_E) > 0 else turning + still
 
 
-def rubik_frames(cx, cy, scale):
-    """One entry per frame: (is the cube settled, facelets)."""
-    cubies, frames = _solved_cube(), []
-    for move in rubik_sequence():
-        for k in range(TURN_STEPS):
-            frames.append((k == 0, _facelets(cubies, move, k / TURN_STEPS, cx, cy, scale)))
-        _apply(cubies, move)
-    return frames
+def _ease(u):
+    return u * u * (3 - 2 * u)
+
+
+def rubik_walk():
+    """An opening scramble, then a random walk and the way back out of it."""
+    rng = random.Random(SEED)
+
+    def moves(n):
+        picked, last = [], ""
+        while len(picked) < n:
+            face = rng.choice("UDLRFB")
+            if face == last:
+                continue                               # two turns of one face read as one
+            last = face
+            picked.append(face + rng.choice(("", "'")))
+        return picked
+
+    opening = moves(OPENING)
+    walk = moves(WALK)
+    back = [m[0] if m.endswith("'") else m + "'" for m in reversed(walk)]
+    return opening, walk + back, [rng.randrange(len(HOLDS)) for _ in walk + back]
 
 
 def about(lang):
     L = TEXT[lang]
     W, H = 1200, 440
-    cx, cy, scale = 250, 196, 70
-    frames = rubik_frames(cx, cy, scale)
+    cx, cy, scale = 252, 222, 76
+    turn = (FRAMES - 1) * STEP
+    opening, sequence, rests = rubik_walk()
+    total = sum(HOLDS[r] for r in rests) + turn * len(sequence)
 
-    # One CSS class per colour, so each facelet costs a path and three letters.
-    classes, groups, start, move_dur = {}, [], 0.0, HOLD + (TURN_STEPS - 1) * STEP
-    total = move_dur * len(rubik_sequence())
-    for i, (settled, facelets) in enumerate(frames):
-        paths = []
-        for colour, pts in facelets:
-            name = classes.setdefault(colour, CLASS_CHARS[len(classes)])
-            paths.append(f'<path class="{name}" d="{_quad_path(pts)}"/>')
-        ident = ' id="rk0"' if i == 0 else ""
-        kind = "hld" if settled else "stp"
-        groups.append(f'<g{ident} class="frm {kind}" style="animation-delay:{start - total:.3f}s">'
-                      f'{"".join(paths)}</g>')
-        start += HOLD if settled else STEP
-    swatches = "".join(f".{n}{{fill:{c}}}" for c, n in classes.items())
+    cubies = _solved_cube()
+    for move in opening:
+        _apply(cubies, move)
 
-    # The move being played, written out underneath in cube notation.
-    labels = []
-    for i, move in enumerate(rubik_sequence()):
-        phase = L["scrambling"] if i < len(SCRAMBLE) else L["solving"]
-        notation = t(move[0] + ("′" if move.endswith("'") else ""))
-        labels.append(
-            f'<text {"id=\"mv0\" " if i == 0 else ""}class="mv" x="{cx}" y="406" '
-            f'text-anchor="middle" style="animation-delay:{i * move_dur - total:.3f}s">'
-            f'<tspan class="phase">{t(phase)}</tspan> · <tspan class="move">{notation}</tspan></text>'
-        )
+    classes, moves_svg, start = {}, [], 0.0
+    for i, move in enumerate(sequence):
+        def draw(quads):
+            return "".join(f'<path class="{classes.setdefault(c, CLASS_CHARS[len(classes)])}" '
+                           f'd="{_quad_path(p)}"/>' for c, p in quads)
+
+        hold, mark = HOLDS[rests[i]], " rm0" if i == 0 else ""
+        frames = [f'<g class="frm {"hd%d" % rests[i] + mark if k == 0 else "stp"}" '
+                  f'style="animation-delay:{start + (0 if k == 0 else hold + (k - 1) * STEP) - total:.3f}s">'
+                  f'{draw(_parts(cubies, move, _ease(k / FRAMES), cx, cy, scale)[1])}</g>'
+                  for k in range(FRAMES)]
+        still = (f'<g class="frm sg{rests[i]}{mark}" style="animation-delay:{start - total:.3f}s">'
+                 f'{draw(_parts(cubies, move, 0, cx, cy, scale)[0])}</g>')
+        # The turning layer is wholly on one side of the cut, so its depth order
+        # against the rest of the cube is settled before the turn even starts.
+        order = [still] + frames if _dot(_layer(move)[0], CAM_E) > 0 else frames + [still]
+        moves_svg.append("<g>" + "".join(order) + "</g>")
+        start += hold + turn
+        _apply(cubies, move)
+
+    swatches = "".join(f".{n}{{fill:{c};stroke:{c}}}" for c, n in classes.items())
+    windows = "".join(
+        f'  .hd{k} {{ animation: kd{k} {total:.3f}s linear infinite; }}\n'
+        f'  .sg{k} {{ animation: kg{k} {total:.3f}s linear infinite; }}\n'
+        f'  @keyframes kd{k} {{ 0%,{(h + PAD) / total * 100:.4f}% {{ opacity: 1; }} '
+        f'{(h + PAD) / total * 100 + 0.0005:.4f}%,100% {{ opacity: 0; }} }}\n'
+        f'  @keyframes kg{k} {{ 0%,{(h + turn + PAD) / total * 100:.4f}% {{ opacity: 1; }} '
+        f'{(h + turn + PAD) / total * 100 + 0.0005:.4f}%,100% {{ opacity: 0; }} }}\n'
+        for k, h in enumerate(HOLDS))
 
     lines = []
     y = 104
@@ -576,7 +599,7 @@ def about(lang):
   <linearGradient id="bg2" x1="0" y1="0" x2="1" y2="1">
     <stop offset="0" stop-color="{BG_1}"/><stop offset="1" stop-color="{BG_0}"/>
   </linearGradient>
-  <radialGradient id="halo" cx="0.21" cy="0.47" r="0.32">
+  <radialGradient id="halo" cx="0.21" cy="0.5" r="0.34">
     <stop offset="0" stop-color="{ACCENT}" stop-opacity="0.22"/><stop offset="1" stop-color="{ACCENT}" stop-opacity="0"/>
   </radialGradient>
 </defs>
@@ -587,20 +610,13 @@ def about(lang):
   .row {{ font: 400 16px {MONO}; }}
   .key {{ fill: {ACCENT_2}; font-weight: 700; }}
   .val {{ fill: {INK}; }}
-  .cube {{ font: 700 13px {MONO}; fill: {ACCENT_2}; letter-spacing: 1px; }}
-  .mv {{ font: 400 14px {MONO}; opacity: 0; animation: kmv {total:.3f}s linear infinite; }}
-  .phase {{ fill: {MUTED}; }}
-  .move {{ fill: {ACCENT_3}; font-weight: 700; }}
   {swatches}
   .frm {{ opacity: 0; }}
-  .hld {{ animation: kh {total:.3f}s linear infinite; }}
   .stp {{ animation: ks {total:.3f}s linear infinite; }}
-  @keyframes kh {{ 0%,{(HOLD + PAD) / total * 100:.4f}% {{ opacity: 1; }} {(HOLD + PAD) / total * 100 + 0.0005:.4f}%,100% {{ opacity: 0; }} }}
   @keyframes ks {{ 0%,{(STEP + PAD) / total * 100:.4f}% {{ opacity: 1; }} {(STEP + PAD) / total * 100 + 0.0005:.4f}%,100% {{ opacity: 0; }} }}
-  @keyframes kmv {{ 0%,{(move_dur + PAD) / total * 100:.4f}% {{ opacity: 1; }} {(move_dur + PAD) / total * 100 + 0.0005:.4f}%,100% {{ opacity: 0; }} }}
-  @media (prefers-reduced-motion: reduce) {{
-    .frm, .mv {{ animation: none; }}
-    #rk0, #mv0 {{ opacity: 1; }}
+{windows}  @media (prefers-reduced-motion: reduce) {{
+    .frm {{ animation: none; }}
+    .rm0 {{ opacity: 1; }}
   }}
 </style>
 <rect width="{W}" height="{H}" rx="16" fill="url(#bg2)"/>
@@ -609,10 +625,8 @@ def about(lang):
 <path d="M0 16a16 16 0 0 1 16-16h{W - 32}a16 16 0 0 1 16 16v20H0z" fill="#ffffff" fill-opacity="0.04"/>
 <circle cx="24" cy="18" r="6" fill="#f7768e"/><circle cx="44" cy="18" r="6" fill="#e0af68"/><circle cx="64" cy="18" r="6" fill="{GREEN}"/>
 <text x="{W / 2}" y="23" text-anchor="middle" class="bar">fadi@strasbourg: ~ — neofetch</text>
-<ellipse cx="{cx}" cy="358" rx="118" ry="13" fill="{ACCENT}" fill-opacity="0.12"/>
-<g stroke="{BG_0}" stroke-width="2.4" stroke-linejoin="round">{"".join(groups)}</g>
-<text x="{cx}" y="382" text-anchor="middle" class="cube">RUBIK&#8217;S CUBE</text>
-{"".join(labels)}
+<ellipse cx="{cx}" cy="404" rx="130" ry="14" fill="{ACCENT}" fill-opacity="0.12"/>
+<g stroke-width="{ROUNDING}" stroke-linejoin="round">{"".join(moves_svg)}</g>
 <text x="500" y="72" class="host">fadi<tspan class="at">@</tspan>strasbourg</text>
 <path d="M500 82H760" stroke="{MUTED}" stroke-opacity="0.5" stroke-dasharray="4 4"/>
 {"".join(lines)}
@@ -681,8 +695,8 @@ def rubik_card(lang):
     cubies = _solved_cube()
     for move in ("R", "U'", "F"):
         _apply(cubies, move)
-    cube = "".join(f'<path fill="{colour}" d="{_quad_path(pts)}"/>'
-                   for colour, pts in _facelets(cubies, "L'", 0.24, 1040, 118, 43))
+    cube = "".join(f'<path fill="{colour}" stroke="{colour}" d="{_quad_path(pts)}"/>'
+                   for colour, pts in still_cube(cubies, "L'", 0, 1040, 118, 44))
 
     chips, x = [], 36
     for tech in RUBIK["tech"]:
@@ -718,7 +732,7 @@ def rubik_card(lang):
 <rect x=".5" y=".5" width="{W - 1}" height="{H - 1}" rx="16" fill="none" stroke="{c}" stroke-opacity="0.35"/>
 <rect x="36" y="0" width="64" height="4" rx="2" fill="{c}"/>
 <ellipse cx="1040" cy="214" rx="82" ry="10" fill="{c}" fill-opacity="0.13"/>
-<g stroke="{BG_0}" stroke-width="2" stroke-linejoin="round">{cube}</g>
+<g stroke-width="5" stroke-linejoin="round">{cube}</g>
 <text x="36" y="48" class="label">{t(label)}</text>
 <text x="36" y="94" class="title">{t(RUBIK["title"])}</text>
 <path class="arrow" d="M{W - 56} 42l14-14M{W - 52} 28h10v10"/>
