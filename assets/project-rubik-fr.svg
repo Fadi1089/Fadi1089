@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="260" viewBox="0 0 1200 260" role="img" aria-label="Rubik’s Cube — Un Rubik’s Cube 3D dans le navigateur, qui t’apprend aussi à le résoudre : tourne les faces">
+<title>Rubik’s Cube</title>
+<defs>
+  <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#141a33"/><stop offset="1" stop-color="#0b0f1e"/>
+  </linearGradient>
+  <radialGradient id="h" cx="0.86" cy="0.4" r="0.55">
+    <stop offset="0" stop-color="#bb9af7" stop-opacity="0.26"/><stop offset="1" stop-color="#bb9af7" stop-opacity="0"/>
+  </radialGradient>
+</defs>
+<style>
+  .label { font: 700 12px ui-monospace, SFMono-Regular, 'JetBrains Mono', Menlo, Consolas, 'DejaVu Sans Mono', 'Liberation Mono', monospace; fill: #bb9af7; letter-spacing: 1.5px; }
+  .title { font: 800 34px 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Ubuntu, Arial, sans-serif; fill: #e6e9f5; }
+  .desc { font: 400 17px 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Ubuntu, Arial, sans-serif; fill: #8b93b8; }
+  .chip { font: 600 12px ui-monospace, SFMono-Regular, 'JetBrains Mono', Menlo, Consolas, 'DejaVu Sans Mono', 'Liberation Mono', monospace; fill: #bb9af7; }
+  .cta { font: 700 15px 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Ubuntu, Arial, sans-serif; fill: #bb9af7; }
+  .url { font: 400 12px ui-monospace, SFMono-Regular, 'JetBrains Mono', Menlo, Consolas, 'DejaVu Sans Mono', 'Liberation Mono', monospace; fill: #8b93b8; }
+  .arrow { fill: none; stroke: #bb9af7; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+</style>
+<rect width="1200" height="260" rx="16" fill="url(#g)"/>
+<rect width="1200" height="260" rx="16" fill="url(#h)"/>
+<rect x=".5" y=".5" width="1199" height="259" rx="16" fill="none" stroke="#bb9af7" stroke-opacity="0.35"/>
+<rect x="36" y="0" width="64" height="4" rx="2" fill="#bb9af7"/>
+<ellipse cx="1040" cy="214" rx="82" ry="10" fill="#bb9af7" fill-opacity="0.13"/>
+<g stroke="#0b0f1e" stroke-width="2" stroke-linejoin="round"><path fill="#0c0f1b" d="M1039 165l-17 4 7-35 17-2Z"/><path fill="#e36d83" d="M1029 53l30 5-16-5-32-5Z"/><path fill="#0c0f1b" d="M1046 130l-17 1 7-36 16 1Z"/><path fill="#0c0f1b" d="M1053 94l-17-2 7-37 16 4Z"/><path fill="#475e8f" d="M1118 160l-13 18 2-34 14-16Z"/><path fill="#0c0f1b" d="M1021 170l-21 5 7-39 21-2Z"/><path fill="#dee0eb" d="M1010 48l31 5-19-5-34-6Z"/><path fill="#0c0f1b" d="M1028 132l-20 2 7-41 20 2Z"/><path fill="#ff7f99" d="M1053 38l35 5-18 9-36-5Z"/><path fill="#475e8f" d="M1121 126l-13 16 3-37 14-14Z"/><path fill="#0c0f1b" d="M1035 92l-20-1 8-42 19 5Z"/><path fill="#475e8f" d="M1104 179l-16 21 2-36 17-19Z"/><path fill="#ff7f99" d="M1090 43l38 6-14 10-41-6Z"/><path fill="#82663c" d="M1125 88l-14 14 4-41 14-11Z"/><path fill="#0c0f1b" d="M999 176l-25 7 7-44 25-3Z"/><path fill="#91be62" d="M987 42l34 5-24-6-37-6Z"/><path fill="#ffffff" d="M1033 47l36 6-20 12-39-7Z"/><path fill="#0c0f1b" d="M1006 134l-24 2 7-44 25 1Z"/><path fill="#475e8f" d="M1107 143l-17 19 3-40 17-16Z"/><path fill="#a8834e" d="M988 198l36 13-1-36-37-13Z"/><path fill="#cea160" d="M938 170l34 13 7-44-34-10Z"/><path fill="#0c0f1b" d="M1014 91l-24-2 8-46 24 6Z"/><path fill="#e36d83" d="M945 126l35 10 7-45-35-8Z"/><path fill="#e36d83" d="M952 80l36 8 8-46-37-6Z"/><path fill="#8c8e94" d="M1087 202l-19 25 1-38 20-23Z"/><path fill="#ffffff" d="M1072 54l41 6-18 13-44-8Z"/><path fill="#8f4452" d="M1110 103l-17 17 3-45 18-13Z"/><path fill="#b9596b" d="M986 160l37 12-1-41-39-11Z"/><path fill="#779b50" d="M1026 212l40 16 1-38-41-15Z"/><path fill="#abde72" d="M1008 59l39 7-25 14-42-9Z"/><path fill="#8c8e94" d="M1089 163l-19 24 1-43 21-21Z"/><path fill="#b9596b" d="M983 118l39 10-1-46-42-9Z"/><path fill="#779b50" d="M1026 173l41 14 2-43-44-12Z"/><path fill="#ffab6c" d="M1050 66l44 8-22 16-47-9Z"/><path fill="#8c8e94" d="M1092 121l-21 20 2-49 22-16Z"/><path fill="#779b50" d="M1025 129l44 12 2-48-47-10Z"/></g>
+<text x="36" y="48" class="label">WEB · 3D · JEU · PROJET PHARE</text>
+<text x="36" y="94" class="title">Rubik’s Cube</text>
+<path class="arrow" d="M1144 42l14-14M1148 28h10v10"/>
+<text x="36" y="132" class="desc">Un Rubik’s Cube 3D dans le navigateur, qui t’apprend aussi à le résoudre : tourne les faces</text>
+<text x="36" y="157" class="desc">à la souris ou au clavier, chronomètre tes solves, ou suis le tuteur coup par coup.</text>
+<g transform="translate(36 180)"><rect width="77" height="26" rx="6" fill="#bb9af7" fill-opacity="0.12"/><text x="39" y="17.5" text-anchor="middle" class="chip">React 19</text></g><g transform="translate(121 180)"><rect width="92" height="26" rx="6" fill="#bb9af7" fill-opacity="0.12"/><text x="46" y="17.5" text-anchor="middle" class="chip">TypeScript</text></g><g transform="translate(221 180)"><rect width="77" height="26" rx="6" fill="#bb9af7" fill-opacity="0.12"/><text x="39" y="17.5" text-anchor="middle" class="chip">Three.js</text></g><g transform="translate(306 180)"><rect width="40" height="26" rx="6" fill="#bb9af7" fill-opacity="0.12"/><text x="20" y="17.5" text-anchor="middle" class="chip">R3F</text></g><g transform="translate(355 180)"><rect width="70" height="26" rx="6" fill="#bb9af7" fill-opacity="0.12"/><text x="35" y="17.5" text-anchor="middle" class="chip">Zustand</text></g><g transform="translate(432 180)"><rect width="99" height="26" rx="6" fill="#bb9af7" fill-opacity="0.12"/><text x="50" y="17.5" text-anchor="middle" class="chip">Tailwind v4</text></g><g transform="translate(540 180)"><rect width="48" height="26" rx="6" fill="#bb9af7" fill-opacity="0.12"/><text x="24" y="17.5" text-anchor="middle" class="chip">Vite</text></g>
+<g transform="translate(36 216)">
+  <rect width="263" height="32" rx="16" fill="#bb9af7" fill-opacity="0.14" stroke="#bb9af7" stroke-opacity="0.5"/>
+  <path d="M26 10l12 6-12 6z" fill="#bb9af7"/>
+  <text x="48" y="21" class="cta">Jouer dans le navigateur</text>
+</g>
+<text x="313" y="237" class="url">fadi1089.github.io/Rubik</text>
+</svg>

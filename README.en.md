@@ -19,10 +19,14 @@ Day to day, I do **web development** and **game development**, both at work and 
 I’m also a **Computer Science student (BUT Informatique)** at IUT Robert Schuman in Strasbourg.
 
 <p align="center">
-  <img src="assets/about-en.svg" width="100%" alt="neofetch card: role, studies, web stack, games and 3D, languages, contact">
+  <img src="assets/about-en.svg" width="100%" alt="neofetch card: role, studies, web stack, games and 3D, languages, contact, with an animated Rubik’s Cube scrambling and solving itself">
 </p>
 
 ## 🎮 Featured projects
+
+<p align="center">
+  <a href="https://fadi1089.github.io/Rubik/"><img src="assets/project-rubik-en.svg" width="100%" alt="Rubik’s Cube — a 3D Rubik’s Cube in the browser, with a timer, guides and a step-by-step solver"></a>
+</p>
 
 <p align="center">
   <a href="https://github.com/Fadi1089/CVie.fr"><img src="assets/project-cvie-en.svg" width="49%" alt="CVie.fr — open-source, ATS-friendly CV platform"></a>
