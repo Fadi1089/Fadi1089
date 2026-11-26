@@ -455,7 +455,7 @@ let orbit = 0;
 const look = new THREE.Vector3(), fwd = new THREE.Vector3(), right = new THREE.Vector3();
 function placeCamera(dt, now) {
   const [tc, tw] = targetCam();
-  const k = camInit ? 1 - Math.exp(-dt * 3.2) : 1;
+  const k = camInit ? 1 - Math.exp(-dt * 5) : 1;
   camInit = true;
   for (const key of Object.keys(cam)) cam[key] += (tc[key] - cam[key]) * k;
   for (const key of Object.keys(weights)) weights[key] += ((tw[key] || 0) - weights[key]) * k;
@@ -497,6 +497,44 @@ function resize() {
 }
 addEventListener("resize", resize);
 addEventListener("load", measure);
+// Settle on a camera stop when scrolling ends between two of them: on to the
+// next stop in the direction of the scroll once past a quarter of the way,
+// else back. Not while a text panel taller than the screen is in view, so
+// long panels (on phones) can still be read at any position.
+let settleTimer = 0, scrollFrom = null, settlingTo = null, settleUntil = 0;
+// Any input of the reader's own takes over from a glide in progress.
+for (const ev of ["wheel", "touchstart", "keydown", "pointerdown"]) addEventListener(ev, () => { settlingTo = null; }, { passive: true });
+addEventListener("scroll", () => {
+  if (settlingTo !== null) {
+    // Ignore our own glide until it arrives (or a second at most, in case
+    // something else interrupted it, like dragging the scrollbar).
+    if (Math.abs(scrollY - settlingTo) < 2 || performance.now() > settleUntil) settlingTo = null;
+    else return;
+  }
+  scrollFrom ??= scrollY;
+  clearTimeout(settleTimer);
+  settleTimer = setTimeout(settle, 150);
+}, { passive: true });
+function settle() {
+  const y = scrollY, from = scrollFrom ?? y;
+  scrollFrom = null;
+  let i = 0;
+  while (i < anchors.length - 1 && y >= anchors[i + 1]) i++;
+  if (i >= anchors.length - 1) return;
+  const a = anchors[i], b = anchors[i + 1], t = (y - a) / (b - a);
+  if (t < 0.01 || t > 0.99) return;
+  const tall = sections.some((s) => {
+    const p = s.querySelector(".panel"), r = p?.getBoundingClientRect();
+    return r && r.height > innerHeight - 40 && r.bottom > 0 && r.top < innerHeight;
+  });
+  if (tall) return;
+  const down = y > from;
+  const target = down ? (t > 0.25 ? b : a) : (t < 0.75 ? a : b);
+  settlingTo = target;
+  settleUntil = performance.now() + 1200;
+  scrollTo({ top: target, behavior: reduceMotion ? "auto" : "smooth" });
+}
+
 // Fonts and images change the layout after load; keep the anchors in step.
 if ("ResizeObserver" in window) new ResizeObserver(measure).observe(document.querySelector("main"));
 
