@@ -68,7 +68,7 @@ function prepModel(gltf) {
 
 // Turns (degrees) that stand a model up and make its front face +z,
 // found by looking at each one.
-const MODEL_FIX = { desk: { y: 180 }, laptop: { y: 180 }, plane: { y: 180 } };
+const MODEL_FIX = { desk: { y: 180 }, laptop: { y: 180 }, plane: { y: 180 }, cat: { x: -90 } };
 
 const _box = new THREE.Box3(), _size = new THREE.Vector3(), _ctr = new THREE.Vector3();
 // Wrap obj so it stands on y = 0, centred, at height o.h (or with its largest
@@ -944,8 +944,11 @@ function buildWfc(world, tileColors) {
   const group = new THREE.Group();
   group.visible = false;
 
+  // Grid and trail cover the island and its shallows, not the open sea.
+  const isle = (i) => g.tiles[i] !== T.DEEP;
   const pos = new Float32Array(N * 24);
   for (let i = 0, p = 0; i < N; i++) {
+    if (!isle(i)) continue;
     const x = cx(i), z = cz(i), y = top(i);
     const c = [[x - 0.5, z - 0.5], [x + 0.5, z - 0.5], [x + 0.5, z + 0.5], [x - 0.5, z + 0.5]];
     for (let e = 0; e < 4; e++) {
@@ -1006,6 +1009,7 @@ function buildWfc(world, tileColors) {
       for (let k = Math.max(0, Math.floor(head - len)); k < Math.min(N, head); k++) {
         const f = 1 - (head - k) / len;
         const cell = g.order[k];
+        if (!isle(cell)) continue;
         trail.setColorAt(cell, col.copy(sand).multiplyScalar(f * f * 1.4));
         lit.push(cell);
       }

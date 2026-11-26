@@ -47,25 +47,60 @@ function noise2(seed) {
   };
 }
 
-// The seabed beyond the island's grid: columns that carry on from the grid's
-// deep cells and slope away with some noise, out to a round edge in the fog,
-// so the sea has no square border. Static: it sits under water the whole time.
+// The seabed follows one rule everywhere, inside the grid and out past it:
+// it deepens with the distance to land, with some noise and the odd bank. So
+// the grid's deep cells and the ring of columns around it join up, and the sea
+// has no square border. The ring is static: it sits under water the whole time.
 const SEABED_RING = 44; // cells beyond the grid
 const BASE = -3.2; // bottom of every column, same as the island's
-function seabed(g) {
-  const W = g.W, H = g.H, n = noise2(g.seed * 3 + 11), m = noise2(g.seed * 5 + 7);
-  const cells = [];
+const BED_DEEP = new THREE.Color("#0f3448"), BED_MID = new THREE.Color("#14415a"), BED_BANK = new THREE.Color("#2c7a92");
+
+// Distance to land at any point: the distance at the nearest grid cell plus
+// how far the point lies past the grid.
+function distAt(g, x, z) {
+  const W = g.W, H = g.H;
+  const cx = Math.min(W - 1, Math.max(0, Math.floor(x + W / 2))), cz = Math.min(H - 1, Math.max(0, Math.floor(z + H / 2)));
+  return g.landDist[cz * W + cx] + Math.max(0, Math.abs(x) - W / 2, Math.abs(z) - H / 2);
+}
+
+function bed(g) {
+  g.landDist ??= landDistance(g);
+  const n = noise2(g.seed * 3 + 11), m = noise2(g.seed * 5 + 7);
+  return {
+    depth(x, z) {
+      const d = distAt(g, x, z);
+      let y = -1.7 - 1.3 * smooth((d - 1) / 16) + (n(x / 9, z / 9) - 0.5) * 0.5 + (m(x * 1.7, z * 1.7) - 0.5) * 0.12;
+      const bank = n(x / 17 + 40, z / 17);
+      if (d > 6 && bank > 0.72) y += (bank - 0.72) * 4; // now and then a bank rises
+      return Math.min(-0.8, Math.max(BASE + 0.1, y));
+    },
+    color(y, x, z, c) {
+      return c.copy(BED_DEEP).lerp(BED_MID, smooth((y + 3.1) / 1.1)).lerp(BED_BANK, smooth((y + 1.9) / 1.2)).offsetHSL(0, 0, (m(x * 3, z * 3) - 0.5) * 0.03);
+    },
+  };
+}
+
+// Give the grid's deep cells their seabed depth and colour (called while the
+// island is built, after its plots are placed).
+export function shapeSeabed(g, heights, cols) {
+  const b = bed(g), W = g.W, H = g.H, c = new THREE.Color();
+  for (let i = 0; i < W * H; i++) {
+    if (g.tiles[i] !== T.DEEP) continue;
+    const x = (i % W) - W / 2 + 0.5, z = Math.floor(i / W) - H / 2 + 0.5;
+    heights[i] = b.depth(x, z);
+    cols.setColorAt(i, b.color(heights[i], x, z, c));
+  }
+}
+
+// The ring of seabed columns around the grid, out to a round edge in the fog.
+function seabedRing(g) {
+  const W = g.W, H = g.H, b = bed(g), cells = [];
   for (let z = -H / 2 - SEABED_RING; z < H / 2 + SEABED_RING; z++)
     for (let x = -W / 2 - SEABED_RING; x < W / 2 + SEABED_RING; x++) {
       if (x >= -W / 2 && x < W / 2 && z >= -H / 2 && z < H / 2) continue;
       const cx = x + 0.5, cz = z + 0.5;
       if (Math.hypot(cx, cz) > W / 2 + SEABED_RING) continue;
-      const out = Math.max(Math.abs(cx) - W / 2, Math.abs(cz) - H / 2); // cells past the grid
-      let y = -2.05 - 0.9 * smooth(out / 22) + (n(cx / 9, cz / 9) - 0.5) * 0.6 + (m(cx * 1.7, cz * 1.7) - 0.5) * 0.14;
-      // Now and then a bank rises closer to the surface.
-      const bank = n(cx / 17 + 40, cz / 17);
-      if (bank > 0.72) y += (bank - 0.72) * 4;
-      cells.push([cx, cz, Math.min(-0.7, Math.max(BASE + 0.1, y))]);
+      cells.push([cx, cz, b.depth(cx, cz)]);
     }
   const mesh = new THREE.InstancedMesh(
     new THREE.BoxGeometry(1, 1, 1).translate(0, 0.5, 0),
@@ -73,13 +108,10 @@ function seabed(g) {
     cells.length,
   );
   mesh.receiveShadow = true;
-  const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), v = new THREE.Vector3(), s = new THREE.Vector3();
-  const deep = new THREE.Color("#0f3448"), mid = new THREE.Color("#14415a"), bank = new THREE.Color("#2c7a92"), c = new THREE.Color();
+  const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), v = new THREE.Vector3(), s = new THREE.Vector3(), c = new THREE.Color();
   cells.forEach(([x, z, y], k) => {
     mesh.setMatrixAt(k, m4.compose(v.set(x, BASE, z), q, s.set(1, y - BASE, 1)));
-    const t = (y + 3.1) / 1.1; // 0 deepest .. 1 at the grid's depth
-    c.copy(deep).lerp(mid, smooth(t)).lerp(bank, smooth((y + 1.9) / 1.2)).offsetHSL(0, 0, (m(x * 3, z * 3) - 0.5) * 0.03);
-    mesh.setColorAt(k, c);
+    mesh.setColorAt(k, b.color(y, x, z, c));
   });
   return mesh;
 }
@@ -87,7 +119,7 @@ function seabed(g) {
 const SHORE = new THREE.Color("#5fc2cc"), MID = new THREE.Color("#2b8aa6"), DEEP = new THREE.Color("#195a76");
 
 // Vertex colours: turquoise over the shallows, darker blue out at sea.
-function tintWater(geo, world, dist) {
+function tintWater(geo, world) {
   const { g } = world, W = g.W, H = g.H;
   const pos = geo.attributes.position;
   let color = geo.attributes.color;
@@ -98,11 +130,7 @@ function tintWater(geo, world, dist) {
   const c = new THREE.Color();
   for (let v = 0; v < pos.count; v++) {
     const x = pos.getX(v), z = pos.getZ(v);
-    const cx = Math.floor(x + W / 2), cz = Math.floor(z + H / 2);
-    const inside = cx >= 0 && cz >= 0 && cx < W && cz < H;
-    const outside = Math.max(0, Math.abs(x) - W / 2, Math.abs(z) - H / 2);
-    const d = inside ? Math.min(dist[cz * W + cx], 12) : 6 + outside;
-    const t = d / 8;
+    const t = Math.min(distAt(g, x, z), 16) / 8;
     c.copy(SHORE).lerp(MID, smooth(t * 2)).lerp(DEEP, smooth(t * 2 - 1));
     color.setXYZ(v, c.r, c.g, c.b);
   }
@@ -111,12 +139,13 @@ function tintWater(geo, world, dist) {
 
 export function createSea(scene, world, waterGeo) {
   const { g } = world, W = g.W, H = g.H;
-  const dist = landDistance(g);
-  tintWater(waterGeo, world, dist);
+  g.landDist ??= landDistance(g);
+  const dist = g.landDist;
+  tintWater(waterGeo, world);
   const group = new THREE.Group();
   scene.add(group);
-  const bed = seabed(g);
-  group.add(bed);
+  const ring = seabedRing(g);
+  group.add(ring);
   const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), v = new THREE.Vector3(), s = new THREE.Vector3(), Y = new THREE.Vector3(0, 1, 0);
 
   // Foam: a short white bar on the water side of every coastal cell edge.
@@ -180,7 +209,7 @@ export function createSea(scene, world, waterGeo) {
     },
     dispose() {
       scene.remove(group);
-      for (const m of [foam, glint, bed]) {
+      for (const m of [foam, glint, ring]) {
         m.geometry.dispose();
         m.material.dispose();
         m.dispose();

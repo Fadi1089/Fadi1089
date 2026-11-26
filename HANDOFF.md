@@ -6,7 +6,7 @@ All eight scenes are built in `site/props.js` (camera stops shared in `site/stop
 - Pages are grounded: the CV is a notice board. The contact beach has a jetty that starts at the waterline, flush with the sand.
 - Formio is a big tablet showing the form (two questions with audio clips and choices) next to a bar chart that grows as the stop comes into view. Stack is four labelled strata (systems, back-end, front-end, 3D), each coloured like a terrain tile.
 - Island growth (`updateWorld` in `main.js`): the map fills in flat on the water in WFC order, then land rises and sea sinks from the centre out, then trees and houses grow; scenes appear only after that (`world.ready`).
-- `sea.js`: water tinted by distance to land, foam along the coast, sun glints. A few fish swim in the shallows (props.js, "sea" scene).
+- `sea.js`: the seabed deepens with distance to land by one rule inside the grid and in a ring of columns beyond it (no square border); water tinted the same way; foam along the coast; sun glints. A few fish swim in the shallows (props.js, "sea" scene).
 - Hand-downloaded models (Poly Pizza only serves newer uploads to its own page): chair, cat, tree, fish, listed as MANUAL in `scripts/fetch_models.sh`. `tree.glb` is the "Tree Assets" pack: the island uses six single trees from it (`TREE_PIECES` in `main.js`), one variant per tree. The fish model is an animated clownfish.
 - TrisTik is a fenced game board in the game's own look (one biome per piece, last piece turns and drops into its gap), not floating pieces + windmill. The windmill model was dropped.
 - On desktop each scene centres itself in the space right of its text panel (`stopParams` in `main.js` measures the panel); `up` raises the look point, `mlift` lifts the subject on phones.

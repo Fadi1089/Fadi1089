@@ -3,7 +3,7 @@ import { generate, rng, T } from "./wfc.js";
 import { I18N } from "./i18n.js";
 import { STOPS } from "./stops.js";
 import { createScenes, planPlots, loadManifest, loadModelParts } from "./props.js";
-import { createSea, waterY } from "./sea.js";
+import { createSea, shapeSeabed, waterY } from "./sea.js";
 
 /* ------------------------------------------------------------------ */
 /* Language                                                            */
@@ -189,6 +189,8 @@ function buildWorld(seed) {
   const plan = planPlots(g, heights, landmarks);
   const rp = rng(seed ^ 0x5bd1e995);
   for (const i of plan.cells) cols.setColorAt(i, col.set(TILE[g.tiles[i]].c).offsetHSL(0, 0, (rp() - 0.5) * 0.03));
+  // Deep cells take the seabed's depth and colour, which carries on past the grid.
+  shapeSeabed(g, heights, cols);
 
   // Props: trees, houses and rocks, each tied to the cell it stands on.
   const props = { tree: [], trunk: [], wall: [], roof: [], rock: [] };
@@ -266,17 +268,23 @@ function updateWorld(w, now) {
   let flashed = false;
   for (let i = 0; i < N; i++) {
     const shown = age - w.showAt[i];
+    // Deep sea stays off the flat map, so the map takes the island's shape;
+    // it rises from the sea floor to its depth in phase 2.
+    const deep = w.g.tiles[i] === T.DEEP;
     let top;
     if (reduceMotion) top = w.heights[i];
-    else if (shown < 0) top = BASE; // not decided yet
+    else if (shown < 0 || (deep && age < w.riseAt[i])) top = BASE; // not decided yet
     else if (age < w.riseAt[i]) top = FLAT + (1 - easeOut(shown / T_DROP)) * 0.45; // drops onto the map
-    else top = FLAT + (w.heights[i] - FLAT) * easeInOut((age - w.riseAt[i]) / T_RISE);
+    else {
+      const from = deep ? BASE : FLAT;
+      top = from + (w.heights[i] - from) * easeInOut((age - w.riseAt[i]) / T_RISE);
+    }
     cur[i] = top;
     const [x, z] = cellXZ(i);
     m4.compose(v.set(x, BASE, z), q.identity(), sc.set(1, Math.max(0.001, top - BASE), 1));
     w.cols.setMatrixAt(i, m4);
     // A newly decided tile flashes pale, then fades to its own colour.
-    if (!reduceMotion && shown >= 0 && shown < 0.7) {
+    if (!reduceMotion && !deep && shown >= 0 && shown < 0.7) {
       baseC.fromArray(w.baseColor, i * 3);
       w.cols.setColorAt(i, tint.copy(FLASH).lerp(baseC, easeOut(shown / 0.6)));
       flashed = true;
