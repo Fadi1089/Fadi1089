@@ -3,7 +3,11 @@
 ## Status (2026-11-26): done
 All eight scenes are built in `site/props.js` (camera stops shared in `site/stops.js`), with 23 models in `site/models/` and procedural fallbacks for each. Changes from the plan below:
 - Every scene stands on a **plot**: `planPlots()` picks a block of cells near the landmark, levels it to one height, retiles it (a forest clearing, a beach patch, a snow terrace), turns it to the grid side facing the camera, and keeps a one-cell border free of trees/houses/rocks. Items are laid out in plot units with quarter turns, so nothing hangs off a column edge or sits at a random angle.
-- Pages are grounded: the CV is a notice board, the form sits on a music stand. The stack has a procedural scaffold around it; the contact beach has a jetty that starts at the waterline. Paper and scaffold models were dropped for procedural ones.
+- Pages are grounded: the CV is a notice board. The contact beach has a jetty that starts at the waterline, flush with the sand.
+- Formio is a big phone showing a form (audio clip, choices) next to a bar chart that grows as the stop comes into view. Stack is four labelled strata (systems, back-end, front-end, 3D), each coloured like a terrain tile.
+- Island growth (`updateWorld` in `main.js`): the map fills in flat on the water in WFC order, then land rises and sea sinks from the centre out, then trees and houses grow; scenes appear only after that (`world.ready`).
+- `sea.js`: water tinted by distance to land, foam along the coast, sun glints. A few fish swim in the shallows (props.js, "sea" scene).
+- **Models still to download by hand** (Poly Pizza only serves them to its own page): chair, cat, tree (used for all island trees), fish, clownfish. See the MANUAL list in `scripts/fetch_models.sh`; save each as `site/models/<name>.glb`, then run the script to rebuild the manifest. Until then the site uses built-in stand-ins.
 - TrisTik is a fenced game board in the game's own look (one biome per piece, last piece turns and drops into its gap), not floating pieces + windmill. The windmill model was dropped.
 - On desktop each scene centres itself in the space right of its text panel (`stopParams` in `main.js` measures the panel); `up` raises the look point, `mlift` lifts the subject on phones.
 - The hero orbit unwinds when you scroll away, so scenes face the camera.

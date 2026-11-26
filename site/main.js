@@ -2,7 +2,8 @@ import * as THREE from "three";
 import { generate, rng, T } from "./wfc.js";
 import { I18N } from "./i18n.js";
 import { STOPS } from "./stops.js";
-import { createScenes, planPlots, loadManifest } from "./props.js";
+import { createScenes, planPlots, loadManifest, loadModelParts } from "./props.js";
+import { createSea, waterY } from "./sea.js";
 
 /* ------------------------------------------------------------------ */
 /* Language                                                            */
@@ -91,14 +92,15 @@ floor.rotation.x = -Math.PI / 2;
 floor.position.y = -3.2;
 scene.add(floor);
 
-// Water: a faceted plane whose vertices ripple every frame.
+// Water: a faceted plane whose vertices ripple every frame, tinted per
+// vertex by sea.js (lighter over the shallows).
 const WATER_Y = 0;
 const waterGeo = new THREE.PlaneGeometry(240, 240, 120, 120);
 waterGeo.rotateX(-Math.PI / 2);
 const waterBase = Float32Array.from(waterGeo.attributes.position.array);
 const water = new THREE.Mesh(
   waterGeo,
-  new THREE.MeshStandardMaterial({ color: "#2b7f99", transparent: true, opacity: 0.72, roughness: 0.18, metalness: 0.05, flatShading: true })
+  new THREE.MeshStandardMaterial({ color: "#ffffff", vertexColors: true, transparent: true, opacity: 0.76, roughness: 0.1, metalness: 0.1, flatShading: true })
 );
 water.position.y = WATER_Y;
 water.receiveShadow = true;
@@ -120,8 +122,16 @@ const TILE = {
   [T.VILLAGE]: { h: 0.75, c: "#b9a476" },
 };
 const BASE = -3.2;
-const RISE = reduceMotion ? 0 : 0.75; // seconds for one column to rise
-const STEP = reduceMotion ? 0 : 1.7 / (GRID * GRID); // whole collapse replays in ~1.7 s
+// Growth, in two phases. First the map fills in flat on the water, tile by
+// tile in the order Wave Function Collapse decided them. Then the terrain
+// settles, land rising and sea sinking, from the centre out to the coast.
+// Trees and houses grow last, and the scenes appear once all is still.
+const T_MAP = reduceMotion ? 0 : 1.4; // phase 1
+const T_DROP = reduceMotion ? 0 : 0.22; // one tile dropping onto the map
+const T_SPREAD = reduceMotion ? 0 : 0.55; // phase 2: centre to coast
+const T_RISE = reduceMotion ? 0 : 0.9; // one column rising or sinking
+const T_PROP = reduceMotion ? 0 : 0.4; // one tree or house growing
+const FLAT = 0.16; // height of the flat map
 
 const boxGeo = new THREE.BoxGeometry(1, 1, 1).translate(0, 0.5, 0);
 const treeGeo = new THREE.ConeGeometry(0.3, 0.95, 6).translate(0, 0.475, 0);
@@ -154,8 +164,12 @@ function buildWorld(seed) {
 
   const group = new THREE.Group();
   const heights = new Float32Array(N);
-  const startAt = new Float32Array(N);
-  g.order.forEach((cell, k) => { startAt[cell] = k * STEP; });
+  const showAt = new Float32Array(N), riseAt = new Float32Array(N);
+  g.order.forEach((cell, k) => { showAt[cell] = (k / N) * T_MAP; });
+  for (let i = 0; i < N; i++) {
+    const [x, z] = cellXZ(i);
+    riseAt[i] = T_MAP + T_DROP + Math.min(1, Math.hypot(x, z) / (GRID * 0.62)) * T_SPREAD;
+  }
 
   const cols = new THREE.InstancedMesh(boxGeo, mat.ground, N);
   cols.castShadow = cols.receiveShadow = true;
@@ -202,19 +216,30 @@ function buildWorld(seed) {
       add("rock", i, x, z, 0.6 + r() * 0.8, r() * 6.3);
     }
   }
-  const propMeshes = {};
+  // Trees use the tree model when it loaded (one instanced mesh per part of
+  // it), else the built-in cone and trunk.
+  const parts = [];
   for (const [kind, list] of Object.entries(props)) {
-    const geo = { tree: treeGeo, trunk: trunkGeo, wall: wallGeo, roof: roofGeo, rock: rockGeo }[kind];
-    const m = new THREE.InstancedMesh(geo, mat[kind], Math.max(1, list.length));
-    m.count = list.length;
-    m.castShadow = true;
-    m.receiveShadow = kind !== "tree";
-    group.add(m);
-    propMeshes[kind] = { mesh: m, list };
+    if (treeParts && kind === "trunk") continue;
+    if (treeParts && kind === "tree") for (const p of treeParts) parts.push([p.geometry, p.material, list]);
+    else parts.push([{ tree: treeGeo, trunk: trunkGeo, wall: wallGeo, roof: roofGeo, rock: rockGeo }[kind], mat[kind], list]);
   }
+  const propMeshes = parts.map(([geo, material, list]) => {
+    const m = new THREE.InstancedMesh(geo, material, Math.max(1, list.length));
+    m.count = list.length;
+    m.castShadow = m.receiveShadow = true;
+    group.add(m);
+    return { mesh: m, list };
+  });
 
   scene.add(group);
-  return { g, group, cols, heights, startAt, propMeshes, born: clock.getElapsedTime(), done: false, ms, landmarks, plots: plan.plots };
+  const last = Math.max(...riseAt) + T_RISE;
+  return {
+    g, group, cols, heights, showAt, riseAt, propMeshes, ms, landmarks, plots: plan.plots,
+    baseColor: Float32Array.from(cols.instanceColor.array), cur: new Float32Array(N),
+    born: clock.getElapsedTime(), done: false,
+    ready: reduceMotion ? 0 : last + T_PROP, end: reduceMotion ? 0 : last + T_PROP + 0.7,
+  };
 }
 
 function disposeWorld(w) {
@@ -222,41 +247,52 @@ function disposeWorld(w) {
   w.group.traverse((o) => o.isInstancedMesh && o.dispose());
 }
 
-const ease = (x) => {
-  const c = 1.4;
-  x = Math.min(1, Math.max(0, x));
-  return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2);
-};
+const easeOut = (x) => 1 - (1 - Math.min(1, Math.max(0, x))) ** 3;
+const easeInOut = (x) => { x = Math.min(1, Math.max(0, x)); return x < 0.5 ? 4 * x * x * x : 1 - (-2 * x + 2) ** 3 / 2; };
+const easeBack = (x) => { const c = 1.2; x = Math.min(1, Math.max(0, x)); return 1 + (c + 1) * (x - 1) ** 3 + c * (x - 1) ** 2; };
 
 const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), v = new THREE.Vector3(), sc = new THREE.Vector3(), Y = new THREE.Vector3(0, 1, 0);
+const FLASH = new THREE.Color("#fff3c8"), tint = new THREE.Color(), baseC = new THREE.Color();
 
 function updateWorld(w, now) {
   if (w.done) return;
-  const age = now - w.born;
-  let moving = false;
-  const N = GRID * GRID;
-  const cur = new Float32Array(N);
+  const age = reduceMotion ? Infinity : now - w.born;
+  const N = GRID * GRID, cur = w.cur;
+  let flashed = false;
   for (let i = 0; i < N; i++) {
-    const p = RISE ? ease((age - w.startAt[i]) / RISE) : 1;
-    if (p < 1) moving = true;
-    const top = BASE + (w.heights[i] - BASE) * p;
+    const shown = age - w.showAt[i];
+    let top;
+    if (reduceMotion) top = w.heights[i];
+    else if (shown < 0) top = BASE; // not decided yet
+    else if (age < w.riseAt[i]) top = FLAT + (1 - easeOut(shown / T_DROP)) * 0.45; // drops onto the map
+    else top = FLAT + (w.heights[i] - FLAT) * easeInOut((age - w.riseAt[i]) / T_RISE);
     cur[i] = top;
     const [x, z] = cellXZ(i);
     m4.compose(v.set(x, BASE, z), q.identity(), sc.set(1, Math.max(0.001, top - BASE), 1));
     w.cols.setMatrixAt(i, m4);
+    // A newly decided tile flashes pale, then fades to its own colour.
+    if (!reduceMotion && shown >= 0 && shown < 0.7) {
+      baseC.fromArray(w.baseColor, i * 3);
+      w.cols.setColorAt(i, tint.copy(FLASH).lerp(baseC, easeOut(shown / 0.6)));
+      flashed = true;
+    }
   }
   w.cols.instanceMatrix.needsUpdate = true;
-  for (const { mesh, list } of Object.values(w.propMeshes)) {
+  if (flashed) w.cols.instanceColor.needsUpdate = true;
+  for (const { mesh, list } of w.propMeshes) {
     list.forEach((p, k) => {
-      const grow = RISE ? ease((age - w.startAt[p.cell] - RISE * 0.7) / 0.45) : 1;
-      if (grow < 1) moving = true;
+      const grow = reduceMotion ? 1 : easeBack((age - w.riseAt[p.cell] - T_RISE * 0.85) / T_PROP);
       const s = Math.max(0.001, p.s * grow);
       m4.compose(v.set(p.x, cur[p.cell], p.z), q.setFromAxisAngle(Y, p.rot), sc.set(s, s, s));
       mesh.setMatrixAt(k, m4);
     });
     mesh.instanceMatrix.needsUpdate = true;
   }
-  if (!moving) w.done = true;
+  if (age > w.end) {
+    w.cols.instanceColor.array.set(w.baseColor);
+    w.cols.instanceColor.needsUpdate = true;
+    w.done = true;
+  }
 }
 
 /* ------------------------------------------------------------------ */
@@ -456,12 +492,14 @@ function seedFromUrl() {
   return Number.isFinite(s) && s > 0 ? s : 1089;
 }
 
-let scenes = null;
+let scenes = null, sea = null;
 function grow(seed) {
   if (scenes) scenes.dispose();
+  if (sea) sea.dispose();
   if (world) disposeWorld(world);
   world = buildWorld(seed);
   scenes = createScenes(world, { scene, clock, tileColors: TILE });
+  sea = createSea(scene, world, waterGeo);
   showStat({ cells: GRID * GRID, ms: world.ms, seed });
 }
 
@@ -490,6 +528,14 @@ loadManifest().then((m) => {
   box.hidden = false;
 });
 
+// The island's trees come from a model when it is there. Wait for it a
+// moment before the first island, then carry on with the built-in trees.
+let treeParts = null;
+await Promise.race([
+  loadModelParts("tree", 0.95).then((p) => { treeParts = p; }, () => {}),
+  new Promise((r) => setTimeout(r, 2500)),
+]);
+
 resize();
 grow(seedFromUrl());
 
@@ -505,7 +551,7 @@ renderer.setAnimationLoop(() => {
     const p = waterGeo.attributes.position;
     for (let i = 0; i < p.count; i++) {
       const x = waterBase[i * 3], z = waterBase[i * 3 + 2];
-      p.array[i * 3 + 1] = Math.sin(x * 0.55 + now * 1.3) * 0.07 + Math.cos(z * 0.7 + now * 0.9) * 0.06 + Math.sin((x + z) * 1.7 + now * 2.1) * 0.025;
+      p.array[i * 3 + 1] = waterY(x, z, now);
     }
     p.needsUpdate = true;
     for (const c of clouds.children) {
@@ -516,5 +562,6 @@ renderer.setAnimationLoop(() => {
 
   placeCamera(dt, now);
   scenes.update(now, dt, weights);
+  sea.update(now);
   renderer.render(scene, camera);
 });

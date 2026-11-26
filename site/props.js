@@ -68,7 +68,7 @@ function prepModel(gltf) {
 
 // Turns (degrees) that stand a model up and make its front face +z,
 // found by looking at each one.
-const MODEL_FIX = { desk: { y: 180 }, laptop: { y: 180 } };
+const MODEL_FIX = { desk: { y: 180 }, laptop: { y: 180 }, plane: { y: 180 } };
 
 const _box = new THREE.Box3(), _size = new THREE.Vector3(), _ctr = new THREE.Vector3();
 // Wrap obj so it stands on y = 0, centred, at height o.h (or with its largest
@@ -88,6 +88,23 @@ function fit(obj, o) {
   wrap.scale.setScalar(s);
   wrap.userData.dims = { w: _size.x * s, h: _size.y * s, d: _size.z * s };
   return wrap;
+}
+
+// A model as plain parts (geometry + material), baked to stand on y = 0,
+// centred, at the given height: for drawing many copies with InstancedMesh.
+export async function loadModelParts(name, height) {
+  const gltf = await getModel(name);
+  if (!gltf) return null;
+  const root = gltf.scene;
+  root.updateMatrixWorld(true);
+  const box = new THREE.Box3().setFromObject(root), size = box.getSize(new THREE.Vector3()), c = box.getCenter(new THREE.Vector3());
+  const s = height / size.y, parts = [];
+  root.traverse((o) => {
+    if (!o.isMesh || o.isSkinnedMesh) return;
+    const geo = o.geometry.clone().applyMatrix4(o.matrixWorld).translate(-c.x, -box.min.y, -c.z).scale(s, s, s);
+    parts.push({ geometry: geo, material: o.material });
+  });
+  return parts.length ? parts : null;
 }
 
 function fromModel(gltf, spec) {
@@ -177,18 +194,7 @@ const FALLBACK = {
   campfire: () => grp(
     ...Array.from({ length: 7 }, (_, k) => ball(0.08, "#8f8b99", Math.cos(k * 0.9) * 0.3, 0.05, Math.sin(k * 0.9) * 0.3)),
     ...[0, 1, 2].map((k) => rot(cyl(0.05, 0.05, 0.55, DARKWOOD, 0, 0.06, 0, 6), 0, k * 1.05, Math.PI / 2 - 0.25))),
-  printer: () => grp(box(0.6, 0.3, 0.45, "#d9dde0"), box(0.5, 0.04, 0.35, "#3b4247", 0, 0.3, 0), box(0.38, 0.02, 0.28, PAPER, 0, 0.12, 0.3)),
   folder: () => grp(box(0.7, 0.5, 0.05, "#e2b35a"), box(0.22, 0.06, 0.05, "#e2b35a", -0.22, 0.5, 0)),
-  radio: () => grp(box(1.0, 0.6, 0.35, "#a8452f"),
-    mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.02, 16).rotateX(Math.PI / 2), "#2b2b2b", -0.22, 0.3, 0.18),
-    box(0.3, 0.12, 0.02, "#efe4cc", 0.24, 0.32, 0.17), rot(cyl(0.01, 0.01, 0.6, METAL, 0.35, 0.58, 0), 0, 0, -0.5)),
-  speaker: () => grp(box(0.5, 0.8, 0.45, "#3b2a20"),
-    mesh(new THREE.CylinderGeometry(0.17, 0.17, 0.02, 16).rotateX(Math.PI / 2), "#1a1a1a", 0, 0.3, 0.23),
-    mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.02, 12).rotateX(Math.PI / 2), "#1a1a1a", 0, 0.62, 0.23)),
-  mic: () => grp(cyl(0.2, 0.22, 0.04, "#333"), cyl(0.02, 0.02, 1.2, METAL), scl(ball(0.09, "#444", 0, 1.28, 0), 1, 1.4, 1)),
-  headphones: () => grp(mesh(new THREE.TorusGeometry(0.2, 0.03, 6, 16, Math.PI), "#2b2b2b", 0, 0.1, 0),
-    mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.07, 12).rotateZ(Math.PI / 2), "#d8735a", -0.2, 0.1, 0),
-    mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.07, 12).rotateZ(Math.PI / 2), "#d8735a", 0.2, 0.1, 0)),
   penguin: () => grp(scl(ball(0.3, "#1f2329", 0, 0.45, 0), 1, 1.45, 0.9), scl(ball(0.24, "#f4f4f0", 0, 0.42, 0.13), 0.9, 1.3, 0.5),
     ball(0.17, "#1f2329", 0, 0.84, 0.02), rot(cone(0.045, 0.14, "#f0a030", 0, 0.82, 0.16, 4), Math.PI / 2),
     box(0.1, 0.03, 0.13, "#f0a030", -0.1, 0, 0.06), box(0.1, 0.03, 0.13, "#f0a030", 0.1, 0, 0.06)),
@@ -203,14 +209,14 @@ const FALLBACK = {
     mesh(new THREE.CylinderGeometry(0.25, 0.25, 0.45, 10).rotateX(Math.PI / 2), "#e4eaee", 0, 0.12, 0.68),
     mesh(new THREE.CircleGeometry(0.17, 10), "#1a2a33", 0, 0.14, 0.91)),
   sled: () => grp(box(0.06, 0.05, 1.0, DARKWOOD, -0.22, 0, 0), box(0.06, 0.05, 1.0, DARKWOOD, 0.22, 0, 0), box(0.56, 0.04, 0.85, "#b07a4a", 0, 0.12, 0)),
-  toolbox: () => grp(box(0.6, 0.3, 0.3, "#c0392b"), box(0.3, 0.04, 0.04, "#333", 0, 0.38, 0), box(0.04, 0.08, 0.04, "#333", -0.13, 0.3, 0), box(0.04, 0.08, 0.04, "#333", 0.13, 0.3, 0)),
-  wrench: () => grp(box(0.6, 0.04, 0.08, METAL), cyl(0.08, 0.08, 0.04, METAL, 0.3, 0, 0, 6), cyl(0.07, 0.07, 0.04, METAL, -0.3, 0, 0, 12)),
-  screen: () => grp(box(0.3, 0.03, 0.2, DARK), box(0.06, 0.25, 0.06, DARK), box(0.72, 0.44, 0.05, "#222", 0, 0.24, 0), box(0.66, 0.38, 0.006, glow("#5fd0ff", "#2a8fc0"), 0, 0.27, 0.028)),
-  server: () => grp(box(0.6, 1.6, 0.55, DARK), ...Array.from({ length: 6 }, (_, k) => box(0.52, 0.16, 0.02, "#3b434c", 0, 0.15 + k * 0.22, 0.28))),
   mailbox: () => grp(box(0.08, 0.8, 0.08, DARKWOOD), box(0.32, 0.28, 0.5, "#3a6ea5", 0, 0.8, 0), box(0.03, 0.16, 0.06, "#d8735a", 0.18, 0.9, -0.1)),
   bottle: () => grp(cyl(0.12, 0.12, 0.45, M("#5fa08a", { transparent: true, opacity: 0.7 })), cyl(0.05, 0.08, 0.15, M("#5fa08a", { transparent: true, opacity: 0.7 }), 0, 0.45, 0),
     box(0.08, 0.3, 0.08, PAPER, 0, 0.06, 0), cyl(0.05, 0.05, 0.06, "#b07a4a", 0, 0.6, 0)),
   plane: () => grp(mesh(paperPlaneGeo(), M(PAPER, { side: THREE.DoubleSide }))),
+  chair: () => grp(...[0, 1, 2, 3, 4].map((k) => rot(box(0.3, 0.025, 0.04, "#2b2f36", 0, 0.02, 0), 0, k * 1.2566, 0)),
+    cyl(0.025, 0.025, 0.22, METAL, 0, 0.02, 0), box(0.42, 0.07, 0.4, "#3b6ea8", 0, 0.24, 0), box(0.4, 0.4, 0.06, "#2b2f36", 0, 0.3, -0.2)),
+  fish: () => grp(scl(ball(0.12, "#9fb4c2", 0, 0.1, 0), 0.55, 0.8, 1.5), rot(cone(0.08, 0.12, "#7f95a5", 0, 0.1, -0.22, 4), -Math.PI / 2)),
+  clownfish: () => grp(scl(ball(0.12, "#f08a3c", 0, 0.1, 0), 0.6, 0.85, 1.3), scl(ball(0.122, "#ffffff", 0, 0.1, 0.02), 0.62, 0.86, 0.25), rot(cone(0.08, 0.12, "#f08a3c", 0, 0.1, -0.2, 4), -Math.PI / 2)),
 };
 
 /* ------------------------------------------------------------------ */
@@ -295,102 +301,101 @@ function cvTexture() {
   });
 }
 
+// The Formio form as it shows on a phone: one question with an audio clip,
+// three choices, a send button. Shapes only, so it needs no translation.
 function formTexture() {
-  return canvasTex("form", 512, 680, (g, w, h) => {
+  return canvasTex("form", 360, 720, (g, w, h) => {
     g.fillStyle = PAPER;
     g.fillRect(0, 0, w, h);
     g.fillStyle = "#7fb35a";
-    g.fillRect(0, 0, w, 120);
+    g.fillRect(0, 0, w, 130);
     g.fillStyle = INK;
-    g.font = `800 70px ${DISPLAY}`;
-    g.fillText("FORMIO", 34, 88);
-    let y = 160;
-    const question = (opts, audio) => {
-      g.fillStyle = "#2b3438";
-      g.fillRect(34, y, 300, 16);
-      y += 38;
-      if (audio) {
-        g.fillStyle = "#d8735a";
+    g.font = `800 64px ${DISPLAY}`;
+    g.fillText("FORMIO", 28, 98);
+    g.fillStyle = "#2b3438";
+    g.fillRect(28, 172, 250, 18);
+    // Audio clip: play button and waveform.
+    g.fillStyle = "#f4efe4";
+    g.fillRect(28, 214, w - 56, 84);
+    g.fillStyle = "#d8735a";
+    g.beginPath();
+    g.arc(70, 256, 26, 0, Math.PI * 2);
+    g.fill();
+    g.fillStyle = "#fff";
+    g.beginPath();
+    g.moveTo(61, 242);
+    g.lineTo(84, 256);
+    g.lineTo(61, 270);
+    g.fill();
+    g.fillStyle = "#2b3438";
+    for (let b = 0; b < 17; b++) {
+      const bh = 8 + Math.abs(Math.sin(b * 1.7) * Math.cos(b * 0.6)) * 44;
+      g.fillRect(114 + b * 12, 256 - bh / 2, 7, bh);
+    }
+    // Three choices, the middle one ticked.
+    for (let o = 0; o < 3; o++) {
+      const y = 340 + o * 62;
+      g.strokeStyle = "#2b3438";
+      g.lineWidth = 5;
+      g.strokeRect(30, y, 32, 32);
+      if (o === 1) {
+        g.fillStyle = "#7fb35a";
+        g.fillRect(30, y, 32, 32);
+        g.strokeStyle = "#fff";
         g.beginPath();
-        g.arc(60, y + 22, 24, 0, Math.PI * 2);
-        g.fill();
-        g.fillStyle = "#fff";
-        g.beginPath();
-        g.moveTo(52, y + 10);
-        g.lineTo(74, y + 22);
-        g.lineTo(52, y + 34);
-        g.fill();
-        g.fillStyle = "#2b3438";
-        for (let b = 0; b < 26; b++) {
-          const bh = 6 + Math.abs(Math.sin(b * 1.7) * Math.cos(b * 0.6)) * 34;
-          g.fillRect(100 + b * 13, y + 22 - bh / 2, 7, bh);
-        }
-        y += 66;
+        g.moveTo(37, y + 16);
+        g.lineTo(45, y + 24);
+        g.lineTo(56, y + 8);
+        g.stroke();
       }
-      for (let o = 0; o < opts; o++) {
-        g.strokeStyle = "#2b3438";
-        g.lineWidth = 4;
-        g.strokeRect(36, y, 26, 26);
-        if (o === 1) {
-          g.fillStyle = "#7fb35a";
-          g.fillRect(36, y, 26, 26);
-          g.strokeStyle = "#fff";
-          g.beginPath();
-          g.moveTo(41, y + 13);
-          g.lineTo(48, y + 20);
-          g.lineTo(58, y + 6);
-          g.stroke();
-        }
-        g.fillStyle = "#c9c2b2";
-        g.fillRect(80, y + 8, 220 * lineLen(o + opts * 3), 10);
-        y += 40;
-      }
-      y += 26;
-    };
-    question(3, true);
-    question(2, true);
+      g.fillStyle = "#c9c2b2";
+      g.fillRect(82, y + 11, 200 * lineLen(o + 5), 12);
+    }
     g.fillStyle = INK;
-    g.fillRect(34, h - 84, 150, 50);
+    g.fillRect(28, h - 120, w - 56, 64);
     g.fillStyle = "#e2c983";
     g.beginPath();
-    g.moveTo(98, h - 72);
-    g.lineTo(122, h - 59);
-    g.lineTo(98, h - 46);
+    g.moveTo(w / 2 - 12, h - 104);
+    g.lineTo(w / 2 + 16, h - 88);
+    g.lineTo(w / 2 - 12, h - 72);
     g.fill();
   });
 }
 
-// Bottom to top. Names are product names, the same in every language.
-const BLOCKS = [
-  ["Linux", "#f2c94c", "#1a1a1a"],
-  ["Postgres", "#336791", "#ffffff"],
-  ["Node", "#5fa04e", "#ffffff"],
-  ["TypeScript", "#3178c6", "#ffffff"],
-  ["React", "#20232a", "#61dafb"],
-  ["Three.js", "#111111", "#ffffff"],
-  ["C#", "#68217a", "#ffffff"],
-  ["Blender", "#e87d0d", "#ffffff"],
+// The stack as strata, bottom to top: systems, back-end, front-end, 3D.
+// Each layer is coloured like a terrain tile. Names are product names.
+const STRATA = [
+  ["LINUX · C · GIT", "#8f8b99", "#1d2230"],
+  ["NODE · PRISMA · POSTGRES", "#e2c983", INK],
+  ["REACT · NEXT.JS · TYPESCRIPT", "#7fb35a", INK],
+  ["THREE.JS · BLENDER · C#", "#eef2f4", INK],
 ];
-const BLOCK = { w: 0.62, h: 0.18, d: 0.3 };
-let blockGeo = null;
-const blockMats = [];
-function blockMaterials(k) {
-  if (!blockMats[k]) {
-    const [label, bg, fg] = BLOCKS[k];
-    const tex = canvasTex("block" + k, 320, 90, (g, w, h) => {
+const LAYER = { h: 0.3, w0: 2.3, d0: 1.5, dw: 0.3, dd: 0.25 };
+const LABEL_PX = 400; // canvas pixels per world unit, the same on every layer
+const strataMats = [];
+function strataMaterials(k) {
+  if (!strataMats[k]) {
+    const [label, bg, fg] = STRATA[k];
+    const lw = LAYER.w0 - k * LAYER.dw;
+    const W = Math.round(lw * LABEL_PX), H = Math.round(LAYER.h * LABEL_PX);
+    const tex = canvasTex("stratum" + k, W, H, (g, w, h) => {
       g.fillStyle = bg;
       g.fillRect(0, 0, w, h);
       g.fillStyle = fg;
-      g.font = `800 54px ${DISPLAY}`;
+      // One text size for every layer: the largest that fits the narrowest.
+      let size = h * 0.34;
+      g.font = `600 ${size}px ${MONO}`;
+      const fit = Math.min(...STRATA.map(([l], j) => ((LAYER.w0 - j * LAYER.dw) * LABEL_PX * 0.86) / g.measureText(l).width));
+      if (fit < 1) g.font = `600 ${(size *= fit)}px ${MONO}`;
       g.textAlign = "center";
       g.textBaseline = "middle";
-      g.fillText(label, w / 2, h / 2 + 3);
+      g.fillText(label, w / 2, h / 2 + 2);
     });
-    const side = new THREE.MeshStandardMaterial({ color: bg, roughness: 0.7 });
-    const face = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.7 });
-    blockMats[k] = [side, side, side, side, face, face];
+    const side = M(bg);
+    const face = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.85 });
+    strataMats[k] = [side, side, side, side, face, side];
   }
-  return blockMats[k];
+  return strataMats[k];
 }
 
 const pageMats = {};
@@ -544,19 +549,18 @@ function ttBoard() {
   return g;
 }
 
-function blockStack() {
-  blockGeo ??= new THREE.BoxGeometry(BLOCK.w, BLOCK.h, BLOCK.d).translate(0, BLOCK.h / 2, 0);
+// Stepped layers, each set back from the one below, like a terrace cut.
+function strata() {
   const g = new THREE.Group();
-  const turn = [0.05, -0.1, 0.14, -0.06, 0.1, -0.13, 0.07, -0.04];
-  BLOCKS.forEach((_, k) => {
-    const b = new THREE.Mesh(blockGeo, blockMaterials(k));
-    b.position.set((k % 2 ? 0.025 : -0.02), k * BLOCK.h, (k % 3) * 0.012);
-    b.rotation.y = turn[k];
-    b.castShadow = b.receiveShadow = true;
-    b.userData.y = b.position.y;
-    g.add(b);
+  STRATA.forEach((_, k) => {
+    const w = LAYER.w0 - k * LAYER.dw, d = LAYER.d0 - k * LAYER.dd;
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, LAYER.h, d).translate(0, LAYER.h / 2, 0), strataMaterials(k));
+    m.position.y = k * LAYER.h;
+    m.castShadow = m.receiveShadow = true;
+    m.userData.y = m.position.y;
+    g.add(m);
   });
-  g.userData.dims = { w: BLOCK.w, h: BLOCK.h * BLOCKS.length, d: BLOCK.d };
+  g.userData.dims = { w: LAYER.w0, h: LAYER.h * STRATA.length, d: LAYER.d0 };
   return g;
 }
 
@@ -571,30 +575,31 @@ function signBoard(key, tex, w, h, lift) {
   return g;
 }
 
-// A music stand: one post on three feet, the page tilted back.
-function musicStand(key, tex, w, h, lift) {
-  const p = page(key, tex, w, h, -0.32);
-  p.position.set(0, lift, 0.02);
-  const feet = [0, 1, 2].map((k) => rot(box(0.22, 0.02, 0.025, "#2b2b2b", 0, 0, 0), 0, k * 2.1, 0));
-  const g = grp(p, cyl(0.015, 0.015, lift + 0.05, "#2b2b2b"), ...feet, box(w * 0.9, 0.025, 0.06, "#2b2b2b", 0, lift - 0.01, 0.03));
-  g.userData.dims = { w, h: lift + h, d: 0.2 };
-  g.userData.mat = p.userData.mat;
+// A big phone standing on the sand, showing a Formio form.
+function phone() {
+  const w = 0.64, h = 1.24, d = 0.07, tilt = -0.14;
+  const body = grp(box(w, h, d, "#1d2228"), box(w * 0.3, 0.025, 0.01, "#3a4048", 0, h - 0.06, d / 2 + 0.003));
+  const screen = page("form", formTexture(), w - 0.07, h - 0.16, 0);
+  screen.position.set(0, 0.06, d / 2 + 0.004);
+  body.add(screen);
+  body.position.y = 0.06;
+  body.rotation.x = tilt;
+  const g = grp(body, box(w * 0.7, 0.06, 0.34, "#2b2f36", 0, 0, -0.1));
+  g.userData.dims = { w, h: h + 0.06, d: 0.4 };
+  g.userData.mat = screen.userData.mat;
   return g;
 }
 
-// Scaffolding around the block stack: four poles, ledgers, planks at the back.
-function scaffoldFrame() {
-  const w = BLOCK.w + 0.26, d = BLOCK.d + 0.3, h = BLOCK.h * BLOCKS.length + 0.25;
-  const g = new THREE.Group();
-  for (const [a, b] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) g.add(cyl(0.018, 0.018, h, METAL, (a * w) / 2, 0, (b * d) / 2, 6));
-  for (const y of [h * 0.35, h * 0.7, h]) {
-    g.add(box(w, 0.02, 0.02, METAL, 0, y, -d / 2));
-    g.add(box(0.02, 0.02, d, METAL, -w / 2, y, 0));
-    g.add(box(0.02, 0.02, d, METAL, w / 2, y, 0));
-    g.add(box(w, 0.025, 0.12, "#b07a4a", 0, y, -d / 2 + 0.07));
-  }
-  g.add(box(w, 0.02, 0.02, METAL, 0, h * 0.35, d / 2));
-  g.userData.dims = { w, h, d };
+// Answers coming back as statistics: four bars that grow when the stop is in view.
+function barChart() {
+  const cols = ["#7fb35a", "#4f8a47", "#e2c983", "#d8735a"], hs = [0.42, 0.7, 0.52, 0.86];
+  const g = grp(box(1.0, 0.05, 0.34, "#efe6d2"));
+  hs.forEach((bh, k) => {
+    const b = box(0.17, bh, 0.17, cols[k], -0.33 + k * 0.22, 0.05, 0);
+    b.userData.h = bh;
+    g.add(b);
+  });
+  g.userData.dims = { w: 1.0, h: 0.9, d: 0.34 };
   return g;
 }
 
@@ -610,17 +615,20 @@ const logSeat = () => grp(rot(cyl(0.07, 0.07, 0.5, DARKWOOD, 0, 0.07, 0.25, 8), 
 function seaJetty(it) {
   const { world, S, spec } = it;
   const W = world.g.W, H = world.g.H, c = Math.cos(S.th), s = Math.sin(S.th);
-  const [lx, lz0] = spec.at, len = spec.len || 1.8, deck = 0.3;
-  let lz = lz0;
-  for (; lz < lz0 + 6; lz += 0.25) {
+  const [lx, lz0] = spec.at, len = spec.len || 1.8;
+  // Walk out until the ground is under water; the deck starts at that edge,
+  // level with the last bit of beach, so it meets the sand without a gap.
+  let lz = lz0, shore = it.base.y;
+  for (; lz < lz0 + 6; lz += 0.05) {
     const x = S.P.x + lx * c + lz * s, z = S.P.z - lx * s + lz * c;
-    const k = Math.floor(z + H / 2) * W + Math.floor(x + W / 2);
-    if (world.heights[k] < 0.1) break;
+    const h = world.heights[Math.floor(z + H / 2) * W + Math.floor(x + W / 2)];
+    if (h < 0.1) break;
+    shore = h;
   }
-  const start = Math.max(lz0, lz - 0.45);
-  const g = jetty(len + (lz - start), deck);
+  const deck = Math.max(0.3, shore), start = lz - 0.02;
+  const g = jetty(len, deck);
   g.position.set(0, -it.base.y, start - lz0);
-  it.anchor = [lx, start + len + (lz - start), deck];
+  it.anchor = [lx, start + len, deck];
   return grp(g);
 }
 
@@ -632,31 +640,6 @@ function jetty(len, top) {
     for (const x of [-0.22, 0.22]) g.add(cyl(0.035, 0.035, top + 1.2, DARKWOOD, x, -1.2, z, 6));
   g.userData.dims = { w: 0.5, h: top, d: len };
   return g;
-}
-
-let ringGeo = null;
-function addRings(it, content) {
-  ringGeo ??= new THREE.TorusGeometry(1, 0.025, 6, 40);
-  const d = content.userData.dims;
-  const rings = new THREE.Group();
-  rings.position.set(0, d.h * 0.45, d.d / 2 + 0.04);
-  rings.scale.setScalar(d.h / 0.75);
-  for (let k = 0; k < 3; k++) {
-    const r = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({ color: "#e2c983", transparent: true, opacity: 0, depthWrite: false }));
-    r.userData.ownMat = true;
-    rings.add(r);
-  }
-  it.pivot.add(rings);
-  it.data.rings = rings;
-}
-function animRings(it, t, dt, w) {
-  const rs = it.data.rings;
-  if (!rs) return;
-  rs.children.forEach((r, k) => {
-    const p = (t * 0.5 + k / 3) % 1;
-    r.scale.setScalar(0.12 + p * 1.1);
-    r.material.opacity = (1 - p) * (1 - p) * (0.3 + 0.7 * w);
-  });
 }
 
 const fireMats = [
@@ -696,70 +679,6 @@ function animFire(it, t) {
   light.intensity = 2.6 + Math.sin(t * 11) * 0.5 + Math.sin(t * 4.7) * 0.4;
 }
 
-let ledGeo = null;
-function addLeds(it, content) {
-  ledGeo ??= new THREE.BoxGeometry(0.06, 0.035, 0.015);
-  const d = content.userData.dims;
-  const n = 14;
-  const leds = new THREE.InstancedMesh(ledGeo, new THREE.MeshBasicMaterial(), n);
-  leds.userData.ownMat = true;
-  const m = new THREE.Matrix4(), sc = new THREE.Vector3().setScalar(d.h / 1.4), q0 = new THREE.Quaternion(), v = new THREE.Vector3();
-  for (let k = 0; k < n; k++) {
-    const row = k >> 1, col = k & 1;
-    m.compose(v.set((col ? 0.18 : -0.18) * d.w, d.h * (0.2 + row * 0.1), d.d / 2 + 0.01), q0, sc);
-    leds.setMatrixAt(k, m);
-    leds.setColorAt(k, new THREE.Color("#000"));
-  }
-  it.pivot.add(leds);
-  it.data.leds = leds;
-}
-const LED_ON = [new THREE.Color("#57ff8c"), new THREE.Color("#ffb347"), new THREE.Color("#57d9ff")];
-const LED_OFF = new THREE.Color("#12301c");
-function animLeds(it, t) {
-  const leds = it.data.leds;
-  if (!leds) return;
-  for (let k = 0; k < leds.count; k++) {
-    const tick = Math.floor(t * (3 + (k % 4)) + k * 0.37);
-    const on = ((tick * 2654435761 + k * 40503) >>> 0) % 100 > 35;
-    leds.setColorAt(k, on ? LED_ON[k % 3] : LED_OFF);
-  }
-  leds.instanceColor.needsUpdate = true;
-}
-
-// Sunglasses for the cat (the owner's portrait has a black cat wearing some).
-const _q = new THREE.Quaternion(), _q2 = new THREE.Quaternion(), _p = new THREE.Vector3(), _p2 = new THREE.Vector3(), _s = new THREE.Vector3();
-function addSunglasses(it, content) {
-  let head = null;
-  content.traverse((o) => { if (o.isBone && o.name === "Head") head = o; });
-  if (!head) return;
-  // Reflective lenses, so they still read on a black cat.
-  const lens = M("#1c2734", { roughness: 0.15, metalness: 0.2, emissive: "#35607f", emissiveIntensity: 0.55, flatShading: false });
-  const frame = M("#0b0b0d", { roughness: 0.3, flatShading: false });
-  const glasses = grp(box(0.12, 0.075, 0.02, lens, -0.07, -0.04, 0), box(0.12, 0.075, 0.02, lens, 0.07, -0.04, 0), box(0.36, 0.018, 0.018, frame, 0, 0.03, -0.005));
-  // Work in the pivot's frame: size and place the glasses there, then
-  // express that pose in the head bone's frame so they follow the animation.
-  it.pivot.updateWorldMatrix(true, true);
-  content.traverse((o) => o.isSkinnedMesh && o.skeleton.update());
-  head.getWorldScale(_s);
-  const ratio = _s.x / it.pivot.getWorldScale(_p).x;
-  it.pivot.getWorldQuaternion(_q);
-  head.getWorldQuaternion(_q2);
-  const rel = _q.invert().multiply(_q2); // head orientation in pivot space
-  const relInv = rel.clone().invert();
-  head.getWorldPosition(_p2);
-  it.pivot.worldToLocal(_p2); // head joint in pivot space
-  // In front of the eyes, measured on the Quaternius cat (and close enough
-  // on the procedural one).
-  const d = content.userData.dims;
-  const want = new THREE.Vector3(0, d.h * 0.64, d.d / 2 - d.h * 0.09);
-  const off = want.sub(_p2).applyQuaternion(relInv).divideScalar(ratio);
-  glasses.position.copy(off);
-  glasses.quaternion.copy(relInv);
-  glasses.scale.setScalar((d.h / 0.62) / ratio);
-  head.add(glasses);
-  it.data.glasses = glasses;
-}
-
 /* ------------------------------------------------------------------ */
 /* Per-item animations                                                 */
 /* ------------------------------------------------------------------ */
@@ -795,16 +714,34 @@ const ttDrop = (it, t) => {
   g.scale.set(1, squash, 1);
 };
 
-const sheets = (it, t) => {
+// Bars grow from a stub to full height as the Formio stop comes into view.
+const growBars = (it, t, dt, w) => {
   const g = it.content;
   if (!g) return;
-  const [dx, dy, dz] = it.spec.to;
-  g.children.forEach((s, k) => {
-    const p = (t * 0.32 + k / g.children.length) % 1;
-    s.position.set(dx * p, 0.08 + dy * smooth(p) + Math.sin(p * Math.PI) * 0.5, dz * p);
-    s.rotation.set(-1.2 + p * 1.1, Math.sin(p * 7 + k) * 0.6, Math.sin(p * 9 + k) * 0.4);
-    s.scale.setScalar(Math.sin(p * Math.PI) * 0.9 + 0.05);
+  const f = reduceMotion ? 1 : 0.15 + 0.85 * smooth(w * 1.3 - 0.15);
+  g.children.forEach((b, k) => {
+    if (!b.userData.h) return;
+    b.scale.y = Math.max(0.05, f * (0.9 + Math.sin(t * 1.2 + k) * 0.04 * (1 - reduceMotion)));
   });
+};
+
+// A fish circling in the shallows; every other one leaps now and then.
+const swim = (k) => (it, t) => {
+  const { center: c, r } = it.data;
+  const dir = k % 2 ? 1 : -1, sp = (0.3 + (k % 3) * 0.08) * dir;
+  const a = t * (sp / r) + k * 2.1;
+  let y = -0.04 + Math.sin(t * 1.3 + k) * 0.02, pitch = 0;
+  if (k % 2 === 0) {
+    const ph = (t + k * 2.7) % 12;
+    if (ph < 0.9) {
+      const u = ph / 0.9;
+      y = -0.04 + Math.sin(u * Math.PI) * 0.75;
+      pitch = (u - 0.5) * 1.8;
+    }
+  }
+  it.holder.position.set(c.x + Math.cos(a) * r, y, c.z + Math.sin(a) * r);
+  it.holder.rotation.set(0, Math.atan2(-Math.sin(a) * dir, Math.cos(a) * dir), 0);
+  it.pivot.rotation.set(pitch, Math.sin(t * 9 + k) * 0.18, 0);
 };
 
 const waddle = (k) => (it, t) => {
@@ -862,10 +799,11 @@ const SCENES = [
     stop: "about", plot: [3, 2], tiles: [T.SAND, T.GRASS], base: T.SAND,
     items: [
       { m: "desk", h: 0.48, at: [0.45, -0.45] },
-      { m: "laptop", h: 0.16, on: 0, y: 0.48 },
-      { m: "cat", h: 0.3, at: [-0.05, 0.35], yaw: 30, tint: "#4a4a52", clip: "Idle", then: addSunglasses },
-      { m: "campfire", h: 0.22, at: [-0.75, -0.4], then: addFire, anim: animFire },
-      { make: logSeat, at: [-0.75, 0.25], r: 1 },
+      { m: "laptop", h: 0.16, on: 0, at: [-0.17, 0.02], y: 0.48 },
+      { m: "cat", h: 0.2, on: 0, at: [0.25, 0.02], y: 0.48, yaw: -35 },
+      { m: "chair", h: 0.46, at: [0.45, 0.12], r: 2, yaw: 12 },
+      { m: "campfire", h: 0.22, at: [-0.85, -0.4], then: addFire, anim: animFire },
+      { make: logSeat, at: [-0.85, 0.25], r: 1 },
     ],
   },
   {
@@ -875,10 +813,8 @@ const SCENES = [
   {
     stop: "cvie", plot: [3, 3], tiles: [T.FOREST, T.GRASS], base: T.GRASS,
     items: [
-      { make: () => signBoard("cv", cvTexture(), 0.95, 1.34, 0.2), at: [0.2, -0.85], anim: glowPage },
-      { m: "printer", h: 0.3, at: [-0.9, -0.2] },
-      { make: () => grp(...[0, 1, 2].map(() => mesh(new THREE.PlaneGeometry(0.13, 0.18), M(PAPER, { side: THREE.DoubleSide })))), on: 1, y: 0.3, to: [1.1, 0.55, -0.6], anim: sheets },
-      { m: "folder", h: 0.3, at: [0.95, 0.2], yaw: -20 },
+      { make: () => signBoard("cv", cvTexture(), 0.95, 1.34, 0.2), at: [0.05, -0.8], anim: glowPage },
+      { m: "folder", h: 0.3, at: [0.85, 0.2], yaw: -20 },
       { make: () => paperPile(4), at: [-0.35, 0.55], yaw: 25 },
       { make: () => paperPile(3), at: [0.5, 0.8], yaw: -40 },
     ],
@@ -886,12 +822,8 @@ const SCENES = [
   {
     stop: "formio", plot: [3, 2], tiles: [T.SAND, T.GRASS], base: T.SAND,
     items: [
-      { m: "radio", h: 0.42, at: [0.35, -0.5] },
-      { make: () => musicStand("form", formTexture(), 0.62, 0.83, 0.42), at: [-0.45, -0.5], anim: glowPage },
-      { m: "speaker", h: 0.45, at: [-1.15, -0.15], r: 0, yaw: 20, then: addRings, anim: animRings },
-      { m: "speaker", h: 0.45, at: [1.15, -0.15], r: 0, yaw: -20, then: addRings, anim: animRings },
-      { m: "mic", h: 0.65, at: [0.6, 0.45], yaw: -20 },
-      { m: "headphones", w: 0.26, at: [-0.35, 0.5], yaw: 15 },
+      { make: phone, at: [-0.5, -0.3], yaw: 14, anim: glowPage },
+      { make: barChart, at: [0.65, -0.2], yaw: -12, anim: growBars },
     ],
   },
   {
@@ -910,12 +842,7 @@ const SCENES = [
   {
     stop: "stack", plot: [3, 3], tiles: [T.ROCK, T.SNOW, T.GRASS], base: T.ROCK,
     items: [
-      { make: blockStack, at: [0.35, -0.3], noPop: true, anim: blocks },
-      { make: scaffoldFrame, at: [0.35, -0.3] },
-      { m: "server", h: 0.85, at: [-0.85, -0.75] },
-      { m: "toolbox", h: 0.2, at: [-0.65, 0.55], yaw: 15 },
-      { m: "screen", h: 0.26, on: 3, y: 0.2, yaw: 15 },
-      { m: "wrench", w: 0.28, at: [0.25, 0.85], yaw: 40 },
+      { make: strata, at: [0, -0.1], noPop: true, anim: blocks },
     ],
   },
   {
@@ -929,6 +856,11 @@ const SCENES = [
       ...[[24, 8, 0.11, 0], [27, 10, 0.09, 2.1], [21, 6.5, -0.13, 4], [30, 12, 0.07, 5.2]].map(([r, y, sp, ph]) => (
         { m: "plane", w: 1.0, around: "center", anim: orbit(r, y, sp, ph) })),
     ],
+  },
+  {
+    // Not a stop: a few fish around the island.
+    stop: "sea",
+    items: [0, 1, 2, 3, 4, 5].map((k) => ({ m: k % 3 === 2 ? "clownfish" : "fish", w: 0.5, swim: k, anim: swim(k) })),
   },
 ];
 
@@ -945,6 +877,7 @@ export function planPlots(g, heights, landmarks) {
   const W = g.W, H = g.H;
   const taken = new Set(), cells = new Set(), clear = new Set(), plots = {};
   for (const def of SCENES) {
+    if (!def.plot) continue;
     const stop = STOPS[def.stop], q = quarter(def.stop), lm = landmarks[stop.target];
     const [pw, pd] = def.plot;
     const lc = Math.floor(lm.x + W / 2), lr = Math.floor(lm.z + H / 2);
@@ -1087,8 +1020,15 @@ export function createScenes(world, ctx) {
     root.add(holder);
     let pos;
     if (spec.on != null) {
-      const b = S.placed[spec.on].base;
-      pos = { x: b.x, z: b.z, y: b.y + (spec.y || 0) };
+      const b = S.placed[spec.on].base, [ox, oz] = spec.at || [0, 0], c = Math.cos(S.th), s = Math.sin(S.th);
+      pos = { x: b.x + ox * c + oz * s, z: b.z - ox * s + oz * c, y: b.y + (spec.y || 0) };
+    } else if (spec.swim != null) {
+      // Circle around a shallow cell next to the shore, picked from the seed.
+      const W = world.g.W, H = world.g.H, tl = world.g.tiles;
+      const nearLand = (i) => [-1, 1, -W, W, -2, 2, -2 * W, 2 * W].some((o) => tl[i + o] >= T.SAND);
+      S.shallow ??= [...tl.keys()].filter((i) => tl[i] === T.SHALLOW && i % W > 2 && i % W < W - 3 && i > 2 * W && i < (H - 2) * W && nearLand(i));
+      const cell = S.shallow.length ? S.shallow[(world.g.seed * 7919 + spec.swim * 104729) % S.shallow.length] : 0;
+      pos = { x: (cell % W) - W / 2 + 0.5, y: -0.1, z: Math.floor(cell / W) - H / 2 + 0.5 };
     } else if (spec.around != null) {
       pos = { x: S.P.x, y: S.P.y, z: S.P.z };
     } else if (spec.from != null) {
@@ -1104,8 +1044,9 @@ export function createScenes(world, ctx) {
     holder.rotation.y = S.th + ((spec.r || 0) * 90 + (spec.yaw || 0)) * DEG;
     const it = {
       spec, holder, pivot, content: null, base: { x: pos.x, y: pos.y - (spec.y || 0), z: pos.z },
-      stop: S.def.stop, delay: world.born + (reduceMotion ? 0 : 2.2 + si * 0.06 + k * 0.08), readyAt: Infinity, data: {}, world, S,
+      stop: S.def.stop, delay: world.born + (reduceMotion ? 0 : world.ready + si * 0.06 + k * 0.06), readyAt: Infinity, data: {}, world, S,
     };
+    if (spec.swim != null) it.data = { center: { x: pos.x, z: pos.z }, r: 0.5 + (spec.swim % 3) * 0.25 };
     if (spec.around != null) {
       const c = spec.around === "center" ? world.landmarks.center : S.placed[spec.around].base;
       it.data.center = { x: c.x, y: spec.around === "center" ? 0 : c.y, z: c.z };
@@ -1125,7 +1066,7 @@ export function createScenes(world, ctx) {
   }
 
   SCENES.forEach((def, si) => {
-    const P = world.plots[def.stop];
+    const P = world.plots[def.stop] || { q: 0, x: 0, y: 0, z: 0 };
     const S = { def, P, th: P.q * (Math.PI / 2), placed: [] };
     def.items.forEach((spec, k) => S.placed.push(spawn(S, spec, si, k)));
   });
@@ -1153,7 +1094,7 @@ export function createScenes(world, ctx) {
       dead = true;
       ctx.scene.remove(root);
       for (const it of items) it.mixer?.stopAllAction();
-      const keep = [blockGeo, ringGeo, ledGeo, flameGeo]; // shared by every build
+      const keep = [flameGeo]; // shared by every build
       root.traverse((o) => {
         if (o.geometry && !o.userData.shared && !keep.includes(o.geometry)) o.geometry.dispose();
         if (o.userData.ownMat) [].concat(o.material).forEach((m) => m.dispose());
