@@ -656,13 +656,16 @@ function seaJetty(it) {
   // The deck sits just above the last bit of beach and starts on top of it,
   // so wood and sand never share a surface.
   const deck = Math.max(0.3, best.shore) + 0.03, start = lz - 0.14;
-  const g = new THREE.Group();
-  for (let z = 0; z < len + 0.14; z += 0.17) g.add(box(0.5, 0.04, 0.14, z % 0.34 < 0.17 ? "#b07a4a" : "#a06c40", 0, deck - 0.04, z + 0.07));
-  // Posts stand on the seabed under them, not through it.
-  for (let z = 0.4; z < len + 0.14; z += 0.55)
-    for (const x of [-0.22, 0.22]) {
+  const g = new THREE.Group(), run = len + 0.14, plank = 0.04, beam = 0.05;
+  for (let z = 0; z < run; z += 0.17) g.add(box(0.5, plank, 0.14, z % 0.34 < 0.17 ? "#b07a4a" : "#a06c40", 0, deck - plank, z + 0.07));
+  // Two beams under the planks, and posts under the beams: from the seabed
+  // up to the beams' underside, so nothing passes through the deck.
+  const under = deck - plank - beam;
+  for (const x of [-0.19, 0.19]) g.add(box(0.06, beam, run, DARKWOOD, x, under, run / 2));
+  for (let z = 0.4; z < run; z += 0.55)
+    for (const x of [-0.19, 0.19]) {
       const foot = Math.min(-0.05, ground(lx + x, start + z));
-      g.add(cyl(0.035, 0.035, deck - foot, DARKWOOD, x, foot, z, 6));
+      g.add(cyl(0.03, 0.03, under - foot, DARKWOOD, x, foot, z, 6));
     }
   g.position.set(lx - lx0, -it.base.y, start - lz0);
   it.anchor = [lx, start + len + 0.14, deck];
