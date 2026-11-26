@@ -7,6 +7,7 @@
 
 **🇫🇷 Français** · [🇬🇧 English](https://github.com/Fadi1089/Fadi1089/blob/main/README.en.md) · [🇩🇪 Deutsch](https://github.com/Fadi1089/Fadi1089/blob/main/README.de.md)
 
+[![Portfolio](https://img.shields.io/badge/PORTFOLIO-fadi1089.github.io%2FFadi1089-e2c983?style=for-the-badge&logo=threedotjs&logoColor=0d2433&labelColor=0b0f1e)](https://fadi1089.github.io/Fadi1089/)
 [![Email](https://img.shields.io/badge/fadi.sultan.dev%40gmail.com-0b0f1e?style=for-the-badge&logo=gmail&logoColor=7aa2f7)](mailto:fadi.sultan.dev@gmail.com)
 [![Visites](https://komarev.com/ghpvc/?username=Fadi1089&color=7aa2f7&style=for-the-badge&label=VISITES)](https://github.com/Fadi1089)
 

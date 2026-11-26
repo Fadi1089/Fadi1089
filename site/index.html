@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fadi Sultan · Web & game developer</title>
+  <meta name="description" content="Fadi Sultan, web and game developer in Strasbourg: full-stack TypeScript, 3D graphics, real-time rendering and procedural generation.">
+  <meta name="theme-color" content="#0d2433">
+  <meta property="og:title" content="Fadi Sultan · Web & game developer">
+  <meta property="og:description" content="Full-stack TypeScript, 3D graphics and procedural generation. The island on this page grows by Wave Function Collapse.">
+  <meta property="og:image" content="img/tristik-menu.jpg">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%230d2433'/%3E%3Crect x='4' y='6' width='4' height='4' fill='%236f9e4f'/%3E%3Crect x='8' y='6' width='4' height='4' fill='%233f6b3a'/%3E%3Crect x='8' y='2' width='4' height='4' fill='%23eef2f4'/%3E%3Crect x='4' y='10' width='4' height='4' fill='%23d9c48a'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script type="importmap">
+    { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js" } }
+  </script>
+  <script type="module" src="main.js"></script>
+</head>
+<body>
+  <canvas id="world" aria-hidden="true"></canvas>
+  <div class="scrim" aria-hidden="true"></div>
+
+  <header class="top">
+    <a class="mark" href="#hero" aria-label="Fadi Sultan">FS</a>
+    <nav>
+      <a href="#tristik" data-i18n="nav.work">Work</a>
+      <a href="#stack" data-i18n="nav.stack">Stack</a>
+      <a href="#contact" data-i18n="nav.contact">Contact</a>
+      <a href="https://github.com/Fadi1089">GitHub</a>
+    </nav>
+    <div class="langs" role="group" aria-label="Language">
+      <button data-lang="fr">FR</button><button data-lang="en">EN</button><button data-lang="de">DE</button>
+    </div>
+  </header>
+
+  <main>
+    <section id="hero" data-cam="hero">
+      <h1 class="name"><span>Fadi</span><span>Sultan</span></h1>
+      <p class="role" data-i18n="hero.role">Web & game developer · Strasbourg</p>
+      <p class="lede" data-i18n="hero.lede">I build full-stack TypeScript apps, and games whose worlds grow from a few small rules.</p>
+      <div class="gen">
+        <button id="regen" type="button" data-i18n="hero.regen">Grow another island</button>
+        <p id="genstat" class="mono" aria-live="polite"></p>
+      </div>
+      <p class="hint" data-i18n="hero.hint">This island is built by Wave Function Collapse when the page loads, then drawn with Three.js. Scroll to fly over it.</p>
+    </section>
+
+    <section id="about" data-cam="about" class="stop">
+      <div class="panel" style="--tile: var(--sand)">
+        <h2 class="stack-h" data-i18n="about.h">Who I am</h2>
+        <p data-i18n="about.p1">Day to day, I do <b>web development</b> and <b>game development</b>, at work and in my own projects.</p>
+        <p data-i18n="about.p2">I’m also a Computer Science student (BUT Informatique) at IUT Robert Schuman in Strasbourg.</p>
+      </div>
+    </section>
+
+    <section id="tristik" data-cam="tristik" class="stop">
+      <div class="panel wide" style="--tile: var(--village)">
+        <p class="kicker mono" data-i18n="tristik.kicker">Latest project · 3D game · browser</p>
+        <h2 class="stack-h"><span>Tris</span><span>Tik</span></h2>
+        <p data-i18n="tristik.p">A cozy 3D tile-placement game played with tetrominoes.</p>
+        <figure class="shots">
+          <a href="https://fadi1089.github.io/autristik/"><img src="img/tristik-menu.jpg" width="1600" height="900" loading="lazy" alt="TrisTik main menu with a small isometric village"></a>
+          <a href="https://fadi1089.github.io/autristik/"><img src="img/tristik-board.jpg" width="1600" height="900" loading="lazy" alt="A Performance-mode game: 50 pieces on a fenced grid"></a>
+          <figcaption data-i18n="tristik.cap">The menu, and a Performance-mode game: 50 pieces on a 10 × 20 grid.</figcaption>
+        </figure>
+        <p class="tech mono">React · TypeScript · Three.js · Zustand · Tailwind</p>
+        <p class="links"><a class="go" href="https://fadi1089.github.io/autristik/" data-i18n="tristik.play">Play in your browser</a><a href="https://github.com/Fadi1089/autristik" data-i18n="src">Source code</a></p>
+      </div>
+    </section>
+
+    <section id="cvie" data-cam="cvie" class="stop">
+      <div class="panel" style="--tile: var(--sand)">
+        <p class="kicker mono" data-i18n="cvie.kicker">Web · full-stack</p>
+        <h2 class="stack-h"><span>CVie</span><span>.fr</span></h2>
+        <p data-i18n="cvie.p">A free, open-source CV platform.</p>
+        <p class="tech mono">React 19 · Vite · Tailwind · Hono · Bun · Prisma · PostgreSQL</p>
+        <p class="links"><a href="https://github.com/Fadi1089/CVie.fr" data-i18n="src">Source code</a></p>
+      </div>
+    </section>
+
+    <section id="formio" data-cam="formio" class="stop">
+      <div class="panel" style="--tile: var(--grass)">
+        <p class="kicker mono" data-i18n="formio.kicker">Web · full-stack</p>
+        <h2 class="stack-h"><span>Form</span><span>io</span></h2>
+        <p data-i18n="formio.p">A Google Forms alternative where questions can carry audio clips.</p>
+        <p class="tech mono">Next.js · Express · TypeScript · Prisma · Supabase</p>
+        <p class="links"><a href="https://github.com/Fadi1089/Formio" data-i18n="src">Source code</a></p>
+      </div>
+    </section>
+
+    <section id="wfc" data-cam="wfc" class="stop">
+      <div class="panel wide" style="--tile: var(--rock)">
+        <p class="kicker mono" data-i18n="wfc.kicker">3D · Blender add-on</p>
+        <h2 class="stack-h"><span>WFC</span><span>Terrain</span><span>Designer</span></h2>
+        <p data-i18n="wfc.p">Builds modular 3D terrain in Blender with the Wave Function Collapse algorithm.</p>
+        <figure class="shots one">
+          <a href="https://github.com/Fadi1089/WFC-terrain-designer"><img src="https://raw.githubusercontent.com/Fadi1089/WFC-terrain-designer/main/Terrain_render.png" loading="lazy" alt="Render of a terrain generated with WFC Terrain Designer"></a>
+          <figcaption data-i18n="wfc.cap">A terrain generated in Blender with WFC Terrain Designer.</figcaption>
+        </figure>
+        <p class="tech mono">Python · Blender 3.0+ · Wave Function Collapse</p>
+        <p class="links"><a href="https://github.com/Fadi1089/WFC-terrain-designer" data-i18n="src">Source code</a></p>
+      </div>
+    </section>
+
+    <section id="adeli" data-cam="adeli" class="stop">
+      <div class="panel" style="--tile: var(--snow)">
+        <p class="kicker mono" data-i18n="adeli.kicker">Video game · in development</p>
+        <h2 class="stack-h"><span>Adeli</span></h2>
+        <p data-i18n="adeli.p">A colony management game set in Antarctica.</p>
+        <p class="tech mono" data-i18n="adeli.tech">Game design · Simulation · Strategy</p>
+        <p class="links"><a href="https://github.com/Fadi1089/Adeli" data-i18n="src">Source code</a></p>
+      </div>
+    </section>
+
+    <section id="stack" data-cam="stack" class="stop">
+      <div class="panel" style="--tile: var(--forest)">
+        <h2 class="stack-h" data-i18n="stack.h">Stack</h2>
+        <dl class="stacklist">
+          <dt data-i18n="stack.front">Front-end</dt><dd>TypeScript · JavaScript · React · Next.js · Tailwind · Vite · HTML · CSS</dd>
+          <dt data-i18n="stack.back">Back-end</dt><dd>Node.js · Bun · Hono · Express · Prisma · PostgreSQL · Supabase</dd>
+          <dt data-i18n="stack.games">Games & 3D</dt><dd>Three.js · C# · Blender · Python · Java</dd>
+          <dt data-i18n="stack.sys">Systems & tools</dt><dd>C · Linux · Git · Figma</dd>
+        </dl>
+        <h3 class="mono small" data-i18n="more.h">Also</h3>
+        <ul class="more">
+          <li><a href="https://github.com/Fadi1089/Pokandemaths">Pokandemaths</a> <span data-i18n="more.poke">Pokémon-style educational game, Java</span></li>
+          <li><a href="https://github.com/Fadi1089/KeepBoard">KeepBoard</a> <span data-i18n="more.keep">clipboard history for Linux, Python</span></li>
+          <li><a href="https://github.com/Fadi1089/C-Network-Programming">C-Network-Programming</a> <span data-i18n="more.cnet">network programming in C</span></li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="contact" data-cam="contact" class="stop last">
+      <div class="panel" style="--tile: var(--shallow)">
+        <h2 class="stack-h" data-i18n="contact.h">Write to me</h2>
+        <p data-i18n="contact.p">Always up for talking web, games, 3D or a fun project.</p>
+        <p class="mail"><a href="mailto:fadi.sultan.dev@gmail.com">fadi.sultan.dev<wbr>@gmail.com</a></p>
+        <p class="links"><a href="https://github.com/Fadi1089">github.com/Fadi1089</a></p>
+        <p class="quote" data-i18n="quote">“Plans are great. But sometimes you just have to pretend you know what you’re doing.” — Jim Halpert</p>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
