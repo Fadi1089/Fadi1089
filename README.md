@@ -24,6 +24,23 @@ Je suis aussi étudiant en **BUT Informatique** à l’IUT Robert Schuman (Stras
 
 ## 🎮 Projets phares
 
+### 🆕 Dernier projet : TrisTik
+
+<p align="center">
+  <a href="https://github.com/Fadi1089/autristik"><img src="assets/project-tristik-fr.svg" width="80%" alt="TrisTik"></a>
+</p>
+
+Un jeu cosy de pose de tuiles en 3D, joué avec des tétrominos : chaque pièce mélange des biomes, et le monde se construit tout seul autour (forêts, champs, routes, villages). Fait avec **React**, **TypeScript** et **Three.js**.
+
+<p align="center">
+  <a href="https://fadi1089.github.io/autristik/"><img src="assets/tristik-menu.jpg" width="49%" alt="Menu de TrisTik avec un petit village isométrique"></a>
+  <a href="https://fadi1089.github.io/autristik/"><img src="assets/tristik-board.jpg" width="49%" alt="Partie en mode Performance : 50 pièces sur une grille clôturée"></a>
+  <br>
+  <sub><i>Le menu, et une partie en mode Performance (50 pièces, grille 10 × 20).</i></sub>
+</p>
+
+<p align="center"><b><a href="https://fadi1089.github.io/autristik/">▶️ Jouer dans le navigateur</a></b> · <a href="https://github.com/Fadi1089/autristik">Code source</a></p>
+
 <p align="center">
   <a href="https://github.com/Fadi1089/CVie.fr"><img src="assets/project-cvie-fr.svg" width="49%" alt="CVie.fr — plateforme de CV open source compatible ATS"></a>
   <a href="https://github.com/Fadi1089/Formio"><img src="assets/project-formio-fr.svg" width="49%" alt="Formio — alternative à Google Forms avec clips audio"></a>

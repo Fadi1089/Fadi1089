@@ -58,6 +58,8 @@ TEXT = {
                        "publication par lien public et statistiques."),
             "wfc": ("3D · ADD-ON BLENDER", "Génère des terrains 3D modulaires avec",
                     "l’algorithme Wave Function Collapse."),
+            "tristik": ("NOUVEAU · JEU 3D · NAVIGATEUR", "Jeu cosy de pose de tuiles avec des tétrominos :",
+                        "biomes, routes, villages et objectifs bonus."),
             "adeli": ("JEU VIDÉO · EN DÉVELOPPEMENT", "Jeu de gestion de colonie en Antarctique :",
                       "ressources, équipe, missions et survie."),
         },
@@ -89,6 +91,8 @@ TEXT = {
                        "public share links and analytics."),
             "wfc": ("3D · BLENDER ADD-ON", "Builds modular 3D terrains with the",
                     "Wave Function Collapse algorithm."),
+            "tristik": ("NEW · 3D GAME · BROWSER", "Cozy tile-placement game played with tetrominoes:",
+                        "biomes, roads, villages and bonus objectives."),
             "adeli": ("VIDEO GAME · IN DEVELOPMENT", "Colony management game set in Antarctica:",
                       "resources, staff, missions and survival."),
         },
@@ -120,6 +124,8 @@ TEXT = {
                        "öffentlichen Links und Statistiken."),
             "wfc": ("3D · BLENDER-ADD-ON", "Erzeugt modulare 3D-Landschaften mit dem",
                     "Wave-Function-Collapse-Algorithmus."),
+            "tristik": ("NEU · 3D-SPIEL · BROWSER", "Gemütliches Legespiel mit Tetrominos:",
+                        "Biome, Straßen, Dörfer und Bonusziele."),
             "adeli": ("VIDEOSPIEL · IN ENTWICKLUNG", "Kolonie-Management-Spiel in der Antarktis:",
                       "Ressourcen, Personal, Missionen, Überleben."),
         },
@@ -127,6 +133,8 @@ TEXT = {
 }
 
 PROJECTS = {
+    "tristik": {"title": "TrisTik", "color": "#e0af68",
+                "tech": ["React", "TypeScript", "Three.js", "Zustand", "Tailwind"]},
     "cvie": {"title": "CVie.fr", "color": ACCENT,
              "tech": ["React 19", "Vite", "Tailwind", "Hono", "Bun", "Prisma", "PostgreSQL"]},
     "formio": {"title": "Formio", "color": ACCENT_3,

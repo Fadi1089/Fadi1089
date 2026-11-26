@@ -24,6 +24,23 @@ Außerdem studiere ich **Informatik (BUT Informatique)** am IUT Robert Schuman i
 
 ## 🎮 Ausgewählte Projekte
 
+### 🆕 Neuestes Projekt: TrisTik
+
+<p align="center">
+  <a href="https://github.com/Fadi1089/autristik"><img src="assets/project-tristik-de.svg" width="80%" alt="TrisTik"></a>
+</p>
+
+Ein gemütliches 3D-Legespiel mit Tetrominos: Jedes Teil mischt Biome, und die Welt wächst von selbst drumherum (Wälder, Felder, Straßen, Dörfer). Gebaut mit **React**, **TypeScript** und **Three.js**.
+
+<p align="center">
+  <a href="https://fadi1089.github.io/autristik/"><img src="assets/tristik-menu.jpg" width="49%" alt="TrisTik-Hauptmenü mit einem kleinen isometrischen Dorf"></a>
+  <a href="https://fadi1089.github.io/autristik/"><img src="assets/tristik-board.jpg" width="49%" alt="Eine Partie im Performance-Modus: 50 Teile auf einem eingezäunten Raster"></a>
+  <br>
+  <sub><i>Das Menü und eine Partie im Performance-Modus (50 Teile, 10 × 20 Raster).</i></sub>
+</p>
+
+<p align="center"><b><a href="https://fadi1089.github.io/autristik/">▶️ Im Browser spielen</a></b> · <a href="https://github.com/Fadi1089/autristik">Quellcode</a></p>
+
 <p align="center">
   <a href="https://github.com/Fadi1089/CVie.fr"><img src="assets/project-cvie-de.svg" width="49%" alt="CVie.fr — ATS-kompatible Open-Source-Lebenslauf-Plattform"></a>
   <a href="https://github.com/Fadi1089/Formio"><img src="assets/project-formio-de.svg" width="49%" alt="Formio — Google-Forms-Alternative mit Audioclips"></a>
