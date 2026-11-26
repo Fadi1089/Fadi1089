@@ -158,7 +158,6 @@ main { position: relative; z-index: 2; }
   padding: 30px 32px 28px;
   box-shadow: 0 30px 60px -30px rgba(0, 0, 0, 0.6);
 }
-.panel.wide { width: min(640px, 100%); }
 /* About: the portrait stands on the panel and breaks out over its top edge.
    Stacked above the text by default, beside it on wide screens. */
 .panel.about { position: relative; padding-top: 44px; margin-top: 230px; }
@@ -175,21 +174,28 @@ main { position: relative; z-index: 2; }
   .panel.about { width: 1000px; padding: 30px 556px 28px 34px; margin-top: 120px; }
   .portrait { width: 590px; right: -40px; top: auto; bottom: 0; }
 }
-/* Project cards: an illustration breaks out over the top-right corner,
-   like the portrait on the About card. Decorative, so it has no alt text. */
-.panel.has-art { position: relative; margin-top: 150px; }
+/* Project cards: the illustration takes the place the portrait takes on the
+   About card. Each gets the same box, contained and standing on its bottom
+   edge, so wide and square pictures carry the same weight. Above the card's
+   right corner by default; in the card's own right column on wide screens.
+   Decorative, so it has no alt text. */
+.panel.has-art { position: relative; padding-top: 44px; margin-top: 190px; }
 .card-art {
   position: absolute;
-  right: -34px;
-  top: -176px;
-  width: 250px;
-  height: auto;
+  right: -10px;
+  top: -190px;
+  width: 240px;
+  height: 210px;
+  object-fit: contain;
+  object-position: 50% 100%;
   pointer-events: none;
   filter: drop-shadow(0 18px 24px rgba(0, 0, 0, 0.45));
 }
-.panel.wide.has-art { margin-top: 80px; }
-.panel.wide .card-art { width: 270px; top: -104px; right: -30px; }
 .panel.has-art > :not(.card-art) { position: relative; }
+@media (min-width: 1100px) {
+  .panel.has-art { width: 780px; padding: 30px 340px 28px 34px; margin-top: 110px; }
+  .card-art { width: 330px; height: 340px; right: 4px; top: auto; bottom: 10px; }
+}
 .panel p { margin: 0 0 14px; }
 .kicker {
   font-size: 12px;
@@ -222,11 +228,6 @@ main { position: relative; z-index: 2; }
 }
 .go:hover { color: var(--sea); background: var(--ink); }
 
-.shots { margin: 18px 0; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.shots.one { grid-template-columns: 1fr; }
-.shots img { display: block; width: 100%; height: auto; border: 1px solid rgba(238, 241, 234, 0.15); }
-.shots a:hover img { border-color: var(--tile); }
-.shots figcaption { grid-column: 1 / -1; font-size: 13px; color: var(--muted); }
 
 .stacklist { display: grid; grid-template-columns: max-content 1fr; gap: 10px 18px; margin: 0 0 22px; }
 .stacklist dt { font: 600 12px/1.9 var(--mono); text-transform: uppercase; color: var(--tile); }
@@ -257,11 +258,10 @@ main { position: relative; z-index: 2; }
   .name { font-size: clamp(64px, 22vw, 120px); }
   .stop { padding: 40vh 16px 20vh; align-items: flex-end; min-height: 130vh; }
   .panel { padding: 24px 20px 20px; }
-  .shots { grid-template-columns: 1fr; }
   .panel.about { padding-top: 40px; margin-top: 210px; }
   .portrait { width: 230px; right: -8px; top: -210px; }
-  .panel.has-art { margin-top: 120px; }
-  .card-art, .panel.wide .card-art { width: 180px; right: -6px; top: -132px; }
+  .panel.has-art { padding-top: 40px; margin-top: 160px; }
+  .card-art { width: 200px; height: 170px; right: -8px; top: -158px; }
   .stacklist { grid-template-columns: 1fr; gap: 2px; }
   .stacklist dd { margin-bottom: 10px; }
 }

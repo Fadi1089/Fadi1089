@@ -395,10 +395,12 @@ const clouds = new THREE.Group();
 
 const sections = [...document.querySelectorAll("[data-cam]")];
 let anchors = [];
-let panelRight = [];
+let panelRight = [], hasArt = [];
 function measure() {
   anchors = sections.map((s, i) => (i === 0 ? 0 : s.offsetTop + s.offsetHeight / 2 - innerHeight / 2));
   panelRight = sections.map((s) => s.querySelector(".panel")?.getBoundingClientRect().right ?? 0);
+  // On phones a card's illustration sits above it: lift that scene clear of it.
+  hasArt = sections.map((s) => !!s.querySelector(".card-art"));
 }
 
 function stopParams(i, mobile) {
@@ -414,7 +416,7 @@ function stopParams(i, mobile) {
   }
   // ahead: aim a little toward the camera, for scenes that run out that way.
   const ah = s.ahead || 0, ar = THREE.MathUtils.degToRad(s.az);
-  return { tx: lm.x + Math.sin(ar) * ah, ty: lm.y + (s.up || 0), tz: lm.z + Math.cos(ar) * ah, az: s.az, dist, h, shift, lift: mobile ? s.h * (s.mlift ?? (name === "hero" ? 0.42 : 0.22)) : 0 };
+  return { tx: lm.x + Math.sin(ar) * ah, ty: lm.y + (s.up || 0), tz: lm.z + Math.cos(ar) * ah, az: s.az, dist, h, shift, lift: mobile ? s.h * (s.mlift ?? (name === "hero" ? 0.42 : hasArt[i] ? 0.5 : 0.22)) : 0 };
 }
 
 const lerp = (a, b, t) => a + (b - a) * t;
