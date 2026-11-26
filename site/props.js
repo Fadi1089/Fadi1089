@@ -307,63 +307,69 @@ function cvTexture() {
   });
 }
 
-// The Formio form as it shows on a phone: one question with an audio clip,
-// three choices, a send button. Shapes only, so it needs no translation.
+// The Formio form: two questions, each with an audio clip and choices, and a
+// send button. Shapes only, so it needs no translation.
 function formTexture() {
-  return canvasTex("form", 360, 720, (g, w, h) => {
+  return canvasTex("form", 512, 680, (g, w, h) => {
     g.fillStyle = PAPER;
     g.fillRect(0, 0, w, h);
     g.fillStyle = "#7fb35a";
-    g.fillRect(0, 0, w, 130);
+    g.fillRect(0, 0, w, 120);
     g.fillStyle = INK;
-    g.font = `800 64px ${DISPLAY}`;
-    g.fillText("FORMIO", 28, 98);
-    g.fillStyle = "#2b3438";
-    g.fillRect(28, 172, 250, 18);
-    // Audio clip: play button and waveform.
-    g.fillStyle = "#f4efe4";
-    g.fillRect(28, 214, w - 56, 84);
-    g.fillStyle = "#d8735a";
-    g.beginPath();
-    g.arc(70, 256, 26, 0, Math.PI * 2);
-    g.fill();
-    g.fillStyle = "#fff";
-    g.beginPath();
-    g.moveTo(61, 242);
-    g.lineTo(84, 256);
-    g.lineTo(61, 270);
-    g.fill();
-    g.fillStyle = "#2b3438";
-    for (let b = 0; b < 17; b++) {
-      const bh = 8 + Math.abs(Math.sin(b * 1.7) * Math.cos(b * 0.6)) * 44;
-      g.fillRect(114 + b * 12, 256 - bh / 2, 7, bh);
-    }
-    // Three choices, the middle one ticked.
-    for (let o = 0; o < 3; o++) {
-      const y = 340 + o * 62;
-      g.strokeStyle = "#2b3438";
-      g.lineWidth = 5;
-      g.strokeRect(30, y, 32, 32);
-      if (o === 1) {
-        g.fillStyle = "#7fb35a";
-        g.fillRect(30, y, 32, 32);
-        g.strokeStyle = "#fff";
+    g.font = `800 70px ${DISPLAY}`;
+    g.fillText("FORMIO", 34, 88);
+    let y = 160;
+    const question = (opts, audio) => {
+      g.fillStyle = "#2b3438";
+      g.fillRect(34, y, 300, 16);
+      y += 38;
+      if (audio) {
+        g.fillStyle = "#d8735a";
         g.beginPath();
-        g.moveTo(37, y + 16);
-        g.lineTo(45, y + 24);
-        g.lineTo(56, y + 8);
-        g.stroke();
+        g.arc(60, y + 22, 24, 0, Math.PI * 2);
+        g.fill();
+        g.fillStyle = "#fff";
+        g.beginPath();
+        g.moveTo(52, y + 10);
+        g.lineTo(74, y + 22);
+        g.lineTo(52, y + 34);
+        g.fill();
+        g.fillStyle = "#2b3438";
+        for (let b = 0; b < 26; b++) {
+          const bh = 6 + Math.abs(Math.sin(b * 1.7) * Math.cos(b * 0.6)) * 34;
+          g.fillRect(100 + b * 13, y + 22 - bh / 2, 7, bh);
+        }
+        y += 66;
       }
-      g.fillStyle = "#c9c2b2";
-      g.fillRect(82, y + 11, 200 * lineLen(o + 5), 12);
-    }
+      for (let o = 0; o < opts; o++) {
+        g.strokeStyle = "#2b3438";
+        g.lineWidth = 4;
+        g.strokeRect(36, y, 26, 26);
+        if (o === 1) {
+          g.fillStyle = "#7fb35a";
+          g.fillRect(36, y, 26, 26);
+          g.strokeStyle = "#fff";
+          g.beginPath();
+          g.moveTo(41, y + 13);
+          g.lineTo(48, y + 20);
+          g.lineTo(58, y + 6);
+          g.stroke();
+        }
+        g.fillStyle = "#c9c2b2";
+        g.fillRect(80, y + 8, 220 * lineLen(o + opts * 3), 10);
+        y += 40;
+      }
+      y += 26;
+    };
+    question(3, true);
+    question(2, true);
     g.fillStyle = INK;
-    g.fillRect(28, h - 120, w - 56, 64);
+    g.fillRect(34, h - 84, 150, 50);
     g.fillStyle = "#e2c983";
     g.beginPath();
-    g.moveTo(w / 2 - 12, h - 104);
-    g.lineTo(w / 2 + 16, h - 88);
-    g.lineTo(w / 2 - 12, h - 72);
+    g.moveTo(98, h - 72);
+    g.lineTo(122, h - 59);
+    g.lineTo(98, h - 46);
     g.fill();
   });
 }
@@ -581,12 +587,14 @@ function signBoard(key, tex, w, h, lift) {
   return g;
 }
 
-// A big phone standing on the sand, showing a Formio form.
+// A big tablet standing on the sand, showing a Formio form. Its screen has
+// the form's proportions (512 x 680), so the form is not stretched.
 function phone() {
-  const w = 0.64, h = 1.24, d = 0.07, tilt = -0.14;
+  const w = 0.86, h = 1.2, d = 0.07, tilt = -0.14;
   const body = grp(box(w, h, d, "#1d2228"), box(w * 0.3, 0.025, 0.01, "#3a4048", 0, h - 0.06, d / 2 + 0.003));
-  const screen = page("form", formTexture(), w - 0.07, h - 0.16, 0);
-  screen.position.set(0, 0.06, d / 2 + 0.004);
+  const sw = w - 0.08, sh = (sw * 680) / 512;
+  const screen = page("form", formTexture(), sw, sh, 0);
+  screen.position.set(0, (h - sh) / 2, d / 2 + 0.004);
   body.add(screen);
   body.position.y = 0.06;
   body.rotation.x = tilt;
