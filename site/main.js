@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { generate, rng, T } from "./wfc.js";
 import { I18N } from "./i18n.js";
 import { STOPS } from "./stops.js";
-import { createScenes, sceneZones, loadManifest } from "./props.js";
+import { createScenes, planPlots, loadManifest } from "./props.js";
 
 /* ------------------------------------------------------------------ */
 /* Language                                                            */
@@ -169,14 +169,16 @@ function buildWorld(seed) {
   }
   group.add(cols);
 
-  // Landmarks first: the scenes at the camera stops need clear ground.
+  // Landmarks first, then a levelled plot for each scene near its landmark.
+  // Plot cells are retiled (a clearing, a patch of beach...) and grow nothing.
   const landmarks = findLandmarks(g, heights);
-  const zones = sceneZones(landmarks);
-  const blocked = (kind, x, z) => zones.some((q) => (x - q.x) ** 2 + (z - q.z) ** 2 < q.r * q.r && !(q.keepHouses && (kind === "wall" || kind === "roof")));
+  const plan = planPlots(g, heights, landmarks);
+  const rp = rng(seed ^ 0x5bd1e995);
+  for (const i of plan.cells) cols.setColorAt(i, col.set(TILE[g.tiles[i]].c).offsetHSL(0, 0, (rp() - 0.5) * 0.03));
 
   // Props: trees, houses and rocks, each tied to the cell it stands on.
   const props = { tree: [], trunk: [], wall: [], roof: [], rock: [] };
-  const add = (kind, cell, x, z, s, rot) => { if (!blocked(kind, x, z)) props[kind].push({ cell, x, z, s, rot }); };
+  const add = (kind, cell, x, z, s, rot) => { if (!plan.clear.has(cell)) props[kind].push({ cell, x, z, s, rot }); };
   for (let i = 0; i < N; i++) {
     const t = g.tiles[i];
     const [cx, cz] = cellXZ(i);
@@ -212,7 +214,7 @@ function buildWorld(seed) {
   }
 
   scene.add(group);
-  return { g, group, cols, heights, startAt, propMeshes, born: clock.getElapsedTime(), done: false, ms, landmarks };
+  return { g, group, cols, heights, startAt, propMeshes, born: clock.getElapsedTime(), done: false, ms, landmarks, plots: plan.plots };
 }
 
 function disposeWorld(w) {
@@ -361,7 +363,9 @@ function stopParams(i, mobile) {
     const perPx = (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2) * Math.hypot(dist, h)) / innerHeight;
     shift = Math.max(0, ((panelRight[i] + innerWidth) / 2 - innerWidth / 2) * perPx);
   }
-  return { tx: lm.x, ty: lm.y + (s.up || 0), tz: lm.z, az: s.az, dist, h, shift, lift: mobile ? s.h * (s.mlift ?? (name === "hero" ? 0.42 : 0.22)) : 0 };
+  // ahead: aim a little toward the camera, for scenes that run out that way.
+  const ah = s.ahead || 0, ar = THREE.MathUtils.degToRad(s.az);
+  return { tx: lm.x + Math.sin(ar) * ah, ty: lm.y + (s.up || 0), tz: lm.z + Math.cos(ar) * ah, az: s.az, dist, h, shift, lift: mobile ? s.h * (s.mlift ?? (name === "hero" ? 0.42 : 0.22)) : 0 };
 }
 
 const lerp = (a, b, t) => a + (b - a) * t;

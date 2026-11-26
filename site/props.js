@@ -55,9 +55,12 @@ function prepModel(gltf) {
   gltf.scene.traverse((o) => {
     if (!o.isMesh) return;
     for (const m of [].concat(o.material)) {
-      // No environment map here, so metallic surfaces would render black.
-      if ("metalness" in m) m.metalness = Math.min(m.metalness, 0.2);
-      if ("roughness" in m) m.roughness = Math.max(m.roughness, 0.45);
+      // Match the island: flat-shaded, matte, no metal (there is no
+      // environment map, so metallic surfaces would render black).
+      if ("metalness" in m) m.metalness = 0;
+      if ("roughness" in m) m.roughness = Math.max(m.roughness, 0.75);
+      if ("flatShading" in m) m.flatShading = true;
+      m.needsUpdate = true;
     }
   });
   return gltf;
@@ -65,7 +68,7 @@ function prepModel(gltf) {
 
 // Turns (degrees) that stand a model up and make its front face +z,
 // found by looking at each one.
-const MODEL_FIX = { scaffold: { x: -90, y: 90 }, desk: { y: 180 }, laptop: { y: 180 } };
+const MODEL_FIX = { desk: { y: 180 }, laptop: { y: 180 } };
 
 const _box = new THREE.Box3(), _size = new THREE.Vector3(), _ctr = new THREE.Vector3();
 // Wrap obj so it stands on y = 0, centred, at height o.h (or with its largest
@@ -176,7 +179,6 @@ const FALLBACK = {
     ...[0, 1, 2].map((k) => rot(cyl(0.05, 0.05, 0.55, DARKWOOD, 0, 0.06, 0, 6), 0, k * 1.05, Math.PI / 2 - 0.25))),
   printer: () => grp(box(0.6, 0.3, 0.45, "#d9dde0"), box(0.5, 0.04, 0.35, "#3b4247", 0, 0.3, 0), box(0.38, 0.02, 0.28, PAPER, 0, 0.12, 0.3)),
   folder: () => grp(box(0.7, 0.5, 0.05, "#e2b35a"), box(0.22, 0.06, 0.05, "#e2b35a", -0.22, 0.5, 0)),
-  paper: () => grp(box(0.42, 0.06, 0.3, PAPER), rot(box(0.4, 0.01, 0.28, PAPER, 0.03, 0.06, 0), 0, 0.2, 0)),
   radio: () => grp(box(1.0, 0.6, 0.35, "#a8452f"),
     mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.02, 16).rotateX(Math.PI / 2), "#2b2b2b", -0.22, 0.3, 0.18),
     box(0.3, 0.12, 0.02, "#efe4cc", 0.24, 0.32, 0.17), rot(cyl(0.01, 0.01, 0.6, METAL, 0.35, 0.58, 0), 0, 0, -0.5)),
@@ -205,8 +207,6 @@ const FALLBACK = {
   wrench: () => grp(box(0.6, 0.04, 0.08, METAL), cyl(0.08, 0.08, 0.04, METAL, 0.3, 0, 0, 6), cyl(0.07, 0.07, 0.04, METAL, -0.3, 0, 0, 12)),
   screen: () => grp(box(0.3, 0.03, 0.2, DARK), box(0.06, 0.25, 0.06, DARK), box(0.72, 0.44, 0.05, "#222", 0, 0.24, 0), box(0.66, 0.38, 0.006, glow("#5fd0ff", "#2a8fc0"), 0, 0.27, 0.028)),
   server: () => grp(box(0.6, 1.6, 0.55, DARK), ...Array.from({ length: 6 }, (_, k) => box(0.52, 0.16, 0.02, "#3b434c", 0, 0.15 + k * 0.22, 0.28))),
-  scaffold: () => grp(...[[-1, -1], [1, -1], [-1, 1], [1, 1]].map(([a, b]) => cyl(0.03, 0.03, 1.85, METAL, a * 0.6, 0, b * 0.28, 6)),
-    ...[0.6, 1.2, 1.8].map((y) => box(1.3, 0.05, 0.62, "#b07a4a", 0, y, 0))),
   mailbox: () => grp(box(0.08, 0.8, 0.08, DARKWOOD), box(0.32, 0.28, 0.5, "#3a6ea5", 0, 0.8, 0), box(0.03, 0.16, 0.06, "#d8735a", 0.18, 0.9, -0.1)),
   bottle: () => grp(cyl(0.12, 0.12, 0.45, M("#5fa08a", { transparent: true, opacity: 0.7 })), cyl(0.05, 0.08, 0.15, M("#5fa08a", { transparent: true, opacity: 0.7 }), 0, 0.45, 0),
     box(0.08, 0.3, 0.08, PAPER, 0, 0.06, 0), cyl(0.05, 0.05, 0.06, "#b07a4a", 0, 0.6, 0)),
@@ -371,7 +371,7 @@ const BLOCKS = [
   ["C#", "#68217a", "#ffffff"],
   ["Blender", "#e87d0d", "#ffffff"],
 ];
-const BLOCK = { w: 1.0, h: 0.28, d: 0.46 };
+const BLOCK = { w: 0.62, h: 0.18, d: 0.3 };
 let blockGeo = null;
 const blockMats = [];
 function blockMaterials(k) {
@@ -394,14 +394,14 @@ function blockMaterials(k) {
 }
 
 const pageMats = {};
-function page(key, tex, w, h) {
+function page(key, tex, w, h, tilt = -0.1) {
   pageMats[key] ??= new THREE.MeshStandardMaterial({ map: tex, emissive: "#ffffff", emissiveMap: tex, emissiveIntensity: 0.3, roughness: 0.8 });
   const front = new THREE.Mesh(new THREE.PlaneGeometry(w, h), pageMats[key]);
   const back = new THREE.Mesh(new THREE.PlaneGeometry(w, h).rotateY(Math.PI), M(PAPER));
   const sheet = grp(front, back);
   sheet.traverse((o) => { o.castShadow = true; o.userData.own = true; });
   sheet.position.y = h / 2;
-  sheet.rotation.x = -0.1;
+  sheet.rotation.x = tilt;
   const g = grp(sheet);
   g.userData.dims = { w, h, d: 0.01 };
   g.userData.mat = pageMats[key];
@@ -510,9 +510,9 @@ function ttBoard() {
   const W = cols * cs, D = rows * cs, m = 0.14, wood = "#c08850";
   const ox = -((cols - 1) / 2) * cs, oz = -((rows - 1) / 2) * cs;
   const b = batcher();
-  // Board: wooden base sunk into the ground, cream top with a faint grid.
-  b.add("#b88b5e", bxGeo(W + 2 * m, 1.2, D + 2 * m), 0, -1.12, 0);
-  b.add("#efe6d2", bxGeo(W + 2 * m, 0.08, D + 2 * m), 0, 0, 0);
+  // Board: a low wooden base on the levelled plot, cream top, faint grid.
+  b.add("#b88b5e", bxGeo(W + 2 * m, 0.05, D + 2 * m), 0, 0, 0);
+  b.add("#efe6d2", bxGeo(W + 2 * m, 0.03, D + 2 * m), 0, 0.05, 0);
   for (let c = 0; c <= cols; c++) b.add("#d6c9ab", bxGeo(0.012, 0.004, D), -W / 2 + c * cs, 0.08, 0);
   for (let r = 0; r <= rows; r++) b.add("#d6c9ab", bxGeo(W, 0.004, 0.012), 0, 0.08, -D / 2 + r * cs);
   // Fence: posts around the edge, two rails.
@@ -550,7 +550,7 @@ function blockStack() {
   const turn = [0.05, -0.1, 0.14, -0.06, 0.1, -0.13, 0.07, -0.04];
   BLOCKS.forEach((_, k) => {
     const b = new THREE.Mesh(blockGeo, blockMaterials(k));
-    b.position.set((k % 2 ? 0.04 : -0.03), k * BLOCK.h, (k % 3) * 0.02);
+    b.position.set((k % 2 ? 0.025 : -0.02), k * BLOCK.h, (k % 3) * 0.012);
     b.rotation.y = turn[k];
     b.castShadow = b.receiveShadow = true;
     b.userData.y = b.position.y;
@@ -560,12 +560,87 @@ function blockStack() {
   return g;
 }
 
+// A notice board: two posts holding a page, standing on the ground.
+function signBoard(key, tex, w, h, lift) {
+  const p = page(key, tex, w, h, 0);
+  p.position.set(0, lift, 0.035);
+  const post = (x) => box(0.06, lift + h + 0.06, 0.06, DARKWOOD, x, 0, 0);
+  const g = grp(p, post(-w / 2 + 0.05), post(w / 2 - 0.05), box(w + 0.12, 0.06, 0.08, WOOD, 0, lift + h, 0));
+  g.userData.dims = { w, h: lift + h, d: 0.1 };
+  g.userData.mat = p.userData.mat;
+  return g;
+}
+
+// A music stand: one post on three feet, the page tilted back.
+function musicStand(key, tex, w, h, lift) {
+  const p = page(key, tex, w, h, -0.32);
+  p.position.set(0, lift, 0.02);
+  const feet = [0, 1, 2].map((k) => rot(box(0.22, 0.02, 0.025, "#2b2b2b", 0, 0, 0), 0, k * 2.1, 0));
+  const g = grp(p, cyl(0.015, 0.015, lift + 0.05, "#2b2b2b"), ...feet, box(w * 0.9, 0.025, 0.06, "#2b2b2b", 0, lift - 0.01, 0.03));
+  g.userData.dims = { w, h: lift + h, d: 0.2 };
+  g.userData.mat = p.userData.mat;
+  return g;
+}
+
+// Scaffolding around the block stack: four poles, ledgers, planks at the back.
+function scaffoldFrame() {
+  const w = BLOCK.w + 0.26, d = BLOCK.d + 0.3, h = BLOCK.h * BLOCKS.length + 0.25;
+  const g = new THREE.Group();
+  for (const [a, b] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) g.add(cyl(0.018, 0.018, h, METAL, (a * w) / 2, 0, (b * d) / 2, 6));
+  for (const y of [h * 0.35, h * 0.7, h]) {
+    g.add(box(w, 0.02, 0.02, METAL, 0, y, -d / 2));
+    g.add(box(0.02, 0.02, d, METAL, -w / 2, y, 0));
+    g.add(box(0.02, 0.02, d, METAL, w / 2, y, 0));
+    g.add(box(w, 0.025, 0.12, "#b07a4a", 0, y, -d / 2 + 0.07));
+  }
+  g.add(box(w, 0.02, 0.02, METAL, 0, h * 0.35, d / 2));
+  g.userData.dims = { w, h, d };
+  return g;
+}
+
+// A few loose sheets in a pile.
+const paperPile = (n) => grp(...Array.from({ length: n }, (_, k) => rot(box(0.2, 0.012, 0.27, PAPER, (k % 2) * 0.02, k * 0.013, -(k % 3) * 0.015), 0, (k - n / 2) * 0.18, 0)));
+
+// A log to sit on by the campfire.
+const logSeat = () => grp(rot(cyl(0.07, 0.07, 0.5, DARKWOOD, 0, 0.07, 0.25, 8), Math.PI / 2, 0, 0));
+
+// A jetty that starts where the beach meets the sea: walks out from the plot
+// along +z until the ground drops under water, and sets its deck just above
+// the sea. Items with from: <its index> are placed relative to its far end.
+function seaJetty(it) {
+  const { world, S, spec } = it;
+  const W = world.g.W, H = world.g.H, c = Math.cos(S.th), s = Math.sin(S.th);
+  const [lx, lz0] = spec.at, len = spec.len || 1.8, deck = 0.3;
+  let lz = lz0;
+  for (; lz < lz0 + 6; lz += 0.25) {
+    const x = S.P.x + lx * c + lz * s, z = S.P.z - lx * s + lz * c;
+    const k = Math.floor(z + H / 2) * W + Math.floor(x + W / 2);
+    if (world.heights[k] < 0.1) break;
+  }
+  const start = Math.max(lz0, lz - 0.45);
+  const g = jetty(len + (lz - start), deck);
+  g.position.set(0, -it.base.y, start - lz0);
+  it.anchor = [lx, start + len + (lz - start), deck];
+  return grp(g);
+}
+
+// A small wooden jetty: planks on posts, deck at height top, along +z.
+function jetty(len, top) {
+  const g = new THREE.Group();
+  for (let z = 0; z < len; z += 0.17) g.add(box(0.5, 0.04, 0.14, z % 0.34 < 0.17 ? "#b07a4a" : "#a06c40", 0, top - 0.04, z + 0.07));
+  for (let z = 0.25; z < len; z += 0.55)
+    for (const x of [-0.22, 0.22]) g.add(cyl(0.035, 0.035, top + 1.2, DARKWOOD, x, -1.2, z, 6));
+  g.userData.dims = { w: 0.5, h: top, d: len };
+  return g;
+}
+
 let ringGeo = null;
 function addRings(it, content) {
   ringGeo ??= new THREE.TorusGeometry(1, 0.025, 6, 40);
   const d = content.userData.dims;
   const rings = new THREE.Group();
-  rings.position.set(0, d.h * 0.45, d.d / 2 + 0.06);
+  rings.position.set(0, d.h * 0.45, d.d / 2 + 0.04);
+  rings.scale.setScalar(d.h / 0.75);
   for (let k = 0; k < 3; k++) {
     const r = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({ color: "#e2c983", transparent: true, opacity: 0, depthWrite: false }));
     r.userData.ownMat = true;
@@ -594,6 +669,7 @@ function addFire(it, content) {
   const d = content.userData.dims;
   const fire = new THREE.Group();
   fire.position.y = d.h * 0.25;
+  fire.scale.setScalar(d.h / 0.38);
   [[0, 0, 1.2, 0], [0.06, 0.03, 0.8, 1], [-0.05, -0.04, 0.9, 1], [0.01, 0.06, 0.7, 0]].forEach(([x, z, s, m]) => {
     const f = new THREE.Mesh(flameGeo, fireMats[m]);
     f.position.set(x, 0, z);
@@ -627,10 +703,10 @@ function addLeds(it, content) {
   const n = 14;
   const leds = new THREE.InstancedMesh(ledGeo, new THREE.MeshBasicMaterial(), n);
   leds.userData.ownMat = true;
-  const m = new THREE.Matrix4();
+  const m = new THREE.Matrix4(), sc = new THREE.Vector3().setScalar(d.h / 1.4), q0 = new THREE.Quaternion(), v = new THREE.Vector3();
   for (let k = 0; k < n; k++) {
     const row = k >> 1, col = k & 1;
-    m.setPosition((col ? 0.18 : -0.18) * d.w, d.h * (0.2 + row * 0.1), d.d / 2 + 0.01);
+    m.compose(v.set((col ? 0.18 : -0.18) * d.w, d.h * (0.2 + row * 0.1), d.d / 2 + 0.01), q0, sc);
     leds.setMatrixAt(k, m);
     leds.setColorAt(k, new THREE.Color("#000"));
   }
@@ -688,9 +764,7 @@ function addSunglasses(it, content) {
 /* Per-item animations                                                 */
 /* ------------------------------------------------------------------ */
 
-const floatPage = (it, t, dt, w) => {
-  it.pivot.position.y = Math.sin(t * 0.9) * 0.1;
-  it.pivot.rotation.y = Math.sin(t * 0.45) * 0.14;
+const glowPage = (it, t, dt, w) => {
   const m = it.content?.userData.mat;
   if (m) m.emissiveIntensity = 0.22 + 0.3 * w;
 };
@@ -737,7 +811,7 @@ const waddle = (k) => (it, t) => {
   const dir = k % 2 ? 1 : -1;
   const sp = (0.35 + (k % 3) * 0.12) * dir;
   const a = t * sp + k * 1.9;
-  const r = k % 4 === 0 ? 0 : 0.22;
+  const r = k % 4 === 0 ? 0 : 0.15;
   it.pivot.position.x = Math.cos(a) * r;
   it.pivot.position.z = Math.sin(a) * r;
   const yaw = r ? Math.atan2(-Math.sin(a) * dir, Math.cos(a) * dir) : Math.sin(t * 0.5 + k) * 0.8;
@@ -776,92 +850,139 @@ const blocks = (it, t) => {
 /* Scenes                                                              */
 /* ------------------------------------------------------------------ */
 
-const LOW = [T.SAND, T.GRASS, T.FOREST, T.VILLAGE];
-
-// at: [x, z] in the stop's local frame. h / w: target height / width.
-// y: height above the ground. yaw: degrees, on top of the stop's azimuth.
-// on: index of the item this one rests on. tiles: where it may stand.
+// Each scene stands on a plot: a w x d block of cells levelled to one
+// height and retiled to one terrain type (a clearing in the forest, a patch
+// of beach, a terrace in the snow), turned to the grid side that faces the
+// stop's camera. Items are laid out on it in plot units: at: [x, z] from the
+// plot centre, +x right, +z toward the camera; r: quarter turns, yaw: extra
+// degrees for living things; h / w: target height / width; y: height above
+// the plot; on: index of the item it rests on.
 const SCENES = [
   {
-    stop: "about", clear: 3.2, tiles: [T.SAND, T.GRASS],
+    stop: "about", plot: [3, 2], tiles: [T.SAND, T.GRASS], base: T.SAND,
     items: [
-      { m: "desk", h: 0.75, at: [0.5, -0.4], yaw: -15 },
-      { m: "laptop", h: 0.26, on: 0, y: 0.75, yaw: -15 },
-      { m: "cat", h: 0.62, at: [-0.5, 0.6], yaw: 35, tint: "#4a4a52", clip: "Idle", then: addSunglasses },
-      { m: "campfire", h: 0.38, at: [-1.2, -0.5], then: addFire, anim: animFire },
+      { m: "desk", h: 0.48, at: [0.45, -0.45] },
+      { m: "laptop", h: 0.16, on: 0, y: 0.48 },
+      { m: "cat", h: 0.3, at: [-0.05, 0.35], yaw: 30, tint: "#4a4a52", clip: "Idle", then: addSunglasses },
+      { m: "campfire", h: 0.22, at: [-0.75, -0.4], then: addFire, anim: animFire },
+      { make: logSeat, at: [-0.75, 0.25], r: 1 },
     ],
   },
   {
-    stop: "tristik", clear: 3.1, tiles: LOW,
+    stop: "tristik", plot: [5, 3], tiles: [T.GRASS, T.VILLAGE, T.SAND, T.FOREST], base: T.GRASS,
+    items: [{ make: ttBoard, at: [0, 0], anim: ttDrop }],
+  },
+  {
+    stop: "cvie", plot: [3, 3], tiles: [T.FOREST, T.GRASS], base: T.GRASS,
     items: [
-      { make: ttBoard, at: [0, 0], footprint: [4.4, 2.9], anim: ttDrop },
+      { make: () => signBoard("cv", cvTexture(), 0.95, 1.34, 0.2), at: [0.2, -0.85], anim: glowPage },
+      { m: "printer", h: 0.3, at: [-0.9, -0.2] },
+      { make: () => grp(...[0, 1, 2].map(() => mesh(new THREE.PlaneGeometry(0.13, 0.18), M(PAPER, { side: THREE.DoubleSide })))), on: 1, y: 0.3, to: [1.1, 0.55, -0.6], anim: sheets },
+      { m: "folder", h: 0.3, at: [0.95, 0.2], yaw: -20 },
+      { make: () => paperPile(4), at: [-0.35, 0.55], yaw: 25 },
+      { make: () => paperPile(3), at: [0.5, 0.8], yaw: -40 },
     ],
   },
   {
-    stop: "cvie", clear: 3.2, tiles: [T.FOREST, T.GRASS, T.ROCK, T.SAND, T.VILLAGE],
+    stop: "formio", plot: [3, 2], tiles: [T.SAND, T.GRASS], base: T.SAND,
     items: [
-      { make: () => page("cv", cvTexture(), 1.9, 2.69), at: [0.3, -0.6], y: 0.9, anim: floatPage },
-      { m: "printer", h: 0.55, at: [-1.4, 0.5], yaw: 25 },
-      { make: () => grp(...[0, 1, 2].map(() => mesh(new THREE.PlaneGeometry(0.22, 0.3), M(PAPER, { side: THREE.DoubleSide })))), on: 1, y: 0.55, to: [1.6, 1.0, -0.9], anim: sheets },
-      { m: "folder", h: 0.6, at: [1.7, 0.8], yaw: -25 },
-      { m: "paper", w: 0.45, at: [-0.4, 1.2], yaw: 30 },
-      { m: "paper", w: 0.4, at: [1.1, -1.4], yaw: -50 },
+      { m: "radio", h: 0.42, at: [0.35, -0.5] },
+      { make: () => musicStand("form", formTexture(), 0.62, 0.83, 0.42), at: [-0.45, -0.5], anim: glowPage },
+      { m: "speaker", h: 0.45, at: [-1.15, -0.15], r: 0, yaw: 20, then: addRings, anim: animRings },
+      { m: "speaker", h: 0.45, at: [1.15, -0.15], r: 0, yaw: -20, then: addRings, anim: animRings },
+      { m: "mic", h: 0.65, at: [0.6, 0.45], yaw: -20 },
+      { m: "headphones", w: 0.26, at: [-0.35, 0.5], yaw: 15 },
     ],
   },
   {
-    stop: "formio", clear: 3.2, tiles: [T.SAND, T.GRASS],
+    stop: "adeli", plot: [4, 3], tiles: [T.SNOW, T.ROCK], base: T.SNOW,
     items: [
-      { m: "radio", h: 0.85, at: [0, -0.4] },
-      { m: "speaker", h: 0.75, at: [-1.6, -0.1], yaw: 20, then: addRings, anim: animRings },
-      { m: "speaker", h: 0.75, at: [1.6, -0.1], yaw: -20, then: addRings, anim: animRings },
-      { m: "mic", h: 1.25, at: [0.85, 0.8], yaw: -25 },
-      { m: "headphones", w: 0.5, at: [-0.7, 0.9], yaw: 20 },
-      { make: () => page("form", formTexture(), 1.2, 1.6), at: [-0.2, -1.6], y: 1.4, anim: floatPage },
+      { m: "igloo", h: 0.5, at: [-1.3, -0.75] },
+      { m: "tent", h: 0.42, at: [0.35, -0.9] },
+      { m: "tent", h: 0.4, at: [1.3, -0.85], r: 3 },
+      { m: "flag", h: 0.95, at: [-0.4, -1.1], anim: sway },
+      { m: "dish", h: 0.5, at: [1.5, 0.35], yaw: -35 },
+      { m: "sled", w: 0.55, at: [-1.3, 0.65], r: 1 },
+      ...[[-0.5, 0.15], [0.2, 0.5], [0.85, -0.05], [0.05, -0.25], [0.6, 1.0], [-0.35, 0.95]].map((at, k) => (
+        { m: "penguin", h: 0.26, at, yaw: (k * 53) % 360, anim: waddle(k) })),
     ],
   },
   {
-    stop: "adeli", clear: 3.2, tiles: [T.SNOW, T.ROCK],
+    stop: "stack", plot: [3, 3], tiles: [T.ROCK, T.SNOW, T.GRASS], base: T.ROCK,
     items: [
-      { m: "igloo", h: 0.75, at: [-1.1, -0.7], yaw: 20 },
-      { m: "tent", h: 0.65, at: [1.2, -1.0], yaw: -20 },
-      { m: "tent", h: 0.6, at: [2.1, -0.1], yaw: -50 },
-      { m: "flag", h: 1.5, at: [0.1, -1.5], anim: sway },
-      { m: "dish", h: 0.85, at: [-2.0, 0.5], yaw: 35 },
-      { m: "sled", w: 0.95, at: [0.8, 1.2], yaw: 70 },
-      ...[[-0.4, 0.4], [0.4, 0.1], [-1.0, 1.0], [1.3, 0.6], [0.1, 1.5], [-0.3, -0.4], [1.9, 1.4]].map((at, k) => (
-        { m: "penguin", h: 0.42, at, yaw: (k * 53) % 360, unique: true, anim: waddle(k) })),
+      { make: blockStack, at: [0.35, -0.3], noPop: true, anim: blocks },
+      { make: scaffoldFrame, at: [0.35, -0.3] },
+      { m: "server", h: 0.85, at: [-0.85, -0.75] },
+      { m: "toolbox", h: 0.2, at: [-0.65, 0.55], yaw: 15 },
+      { m: "screen", h: 0.26, on: 3, y: 0.2, yaw: 15 },
+      { m: "wrench", w: 0.28, at: [0.25, 0.85], yaw: 40 },
     ],
   },
   {
-    stop: "stack", clear: 3.2, tiles: [T.ROCK, T.GRASS, T.FOREST, T.SAND, T.SNOW],
+    stop: "contact", plot: [2, 2], tiles: [T.SAND, T.GRASS], base: T.SAND,
     items: [
-      { m: "scaffold", h: 1.9, at: [-2.0, -1.0], yaw: 15 },
-      { m: "server", h: 1.4, at: [-0.6, -1.3], then: addLeds, anim: animLeds },
-      { m: "screen", h: 0.5, at: [0.5, -0.1], yaw: -15 },
-      { m: "toolbox", h: 0.35, at: [1.7, 0.7], yaw: -30 },
-      { m: "wrench", w: 0.55, at: [0.7, 1.0], yaw: 50 },
-      { make: blockStack, at: [1.5, -1.2], yaw: -12, noPop: true, anim: blocks },
-    ],
-  },
-  {
-    stop: "contact", clear: 2.6, tiles: [T.SAND, T.GRASS],
-    items: [
-      { m: "mailbox", h: 1.6, at: [0, -0.3], yaw: -20 },
-      { m: "bottle", h: 0.6, at: [1.2, 2.2], tiles: [T.SHALLOW, T.DEEP], water: true, y: 0.02, anim: bobBottle },
-      { m: "plane", w: 0.55, around: 0, anim: orbit(1.5, 2.1, 0.9, 0) },
+      { m: "mailbox", h: 0.72, at: [-0.3, 0.45], r: 0 },
+      { make: seaJetty, at: [0.35, 0.6], len: 1.6 },
+      { m: "bottle", h: 0.32, from: 1, at: [-0.7, -0.2], water: true, y: 0.02, anim: bobBottle },
+      { m: "plane", w: 0.32, around: 0, anim: orbit(0.9, 1.1, 0.9, 0) },
       // Planes circling the whole island, seen from the hero view too.
       ...[[24, 8, 0.11, 0], [27, 10, 0.09, 2.1], [21, 6.5, -0.13, 4], [30, 12, 0.07, 5.2]].map(([r, y, sp, ph]) => (
-        { m: "plane", w: 1.2, around: "center", anim: orbit(r, y, sp, ph) })),
+        { m: "plane", w: 1.0, around: "center", anim: orbit(r, y, sp, ph) })),
     ],
   },
 ];
 
-// Circles around each scene where the island should not grow trees or rocks.
-export function sceneZones(landmarks) {
-  return SCENES.map((d) => {
-    const lm = landmarks[STOPS[d.stop].target];
-    return { x: lm.x, z: lm.z, r: d.clear, keepHouses: !!d.keepHouses };
-  });
+// Quarter turn of a scene: the grid side closest to its camera.
+const quarter = (stop) => ((Math.round(STOPS[stop].az / 90) % 4) + 4) % 4;
+// Cell offset (i, j) in plot space turned onto the world grid.
+const turnCell = (q, i, j) => [[i, j], [j, -i], [-i, -j], [-j, i]][q];
+
+// Pick a plot for each scene near its landmark, level it and retile it.
+// Mutates heights, g.tiles and landmarks (each stop's camera then aims at
+// its plot). Returns the plot cells, and the cells (plots plus a one-cell
+// border) where the island should grow no trees, houses or rocks.
+export function planPlots(g, heights, landmarks) {
+  const W = g.W, H = g.H;
+  const taken = new Set(), cells = new Set(), clear = new Set(), plots = {};
+  for (const def of SCENES) {
+    const stop = STOPS[def.stop], q = quarter(def.stop), lm = landmarks[stop.target];
+    const [pw, pd] = def.plot;
+    const lc = Math.floor(lm.x + W / 2), lr = Math.floor(lm.z + H / 2);
+    let best = null, bestS = -Infinity;
+    for (let dr = -4; dr <= 4; dr++)
+      for (let dc = -4; dc <= 4; dc++) {
+        const list = [];
+        let sc = -0.35 * Math.hypot(dc, dr);
+        for (let i = 0; i < pw && list; i++)
+          for (let j = 0; j < pd; j++) {
+            const [x, z] = turnCell(q, i, j), c = lc + dc + x, r = lr + dr + z, k = r * W + c;
+            if (c < 1 || r < 1 || c >= W - 1 || r >= H - 1 || taken.has(k)) { list.length = 0; sc = -Infinity; break; }
+            const t = g.tiles[k];
+            sc += def.tiles.includes(t) ? 1 : t <= T.SHALLOW ? -3 : -1;
+            list.push(k);
+          }
+        if (sc > bestS) { bestS = sc; best = { c: lc + dc, r: lr + dr, list: list.slice() }; }
+      }
+    const [ox, oz] = turnCell(q, (pw - 1) / 2, (pd - 1) / 2);
+    if (!best || !best.list.length) {
+      plots[def.stop] = { q, x: lm.x, y: lm.y, z: lm.z };
+      continue;
+    }
+    // One height for the plot: the median of the cells that already suit it.
+    const hs = best.list.filter((k) => def.tiles.includes(g.tiles[k])).map((k) => heights[k]).sort((a, b) => a - b);
+    const level = hs.length ? hs[hs.length >> 1] : Math.max(0.35, ...best.list.map((k) => heights[k]));
+    for (const k of best.list) {
+      g.tiles[k] = def.base;
+      heights[k] = level;
+      cells.add(k);
+      // Keep a one-cell gap to the next plot, and nothing growing in it.
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { taken.add(k + dy * W + dx); clear.add(k + dy * W + dx); }
+    }
+    const x = best.c - W / 2 + 0.5 + ox, z = best.r - H / 2 + 0.5 + oz;
+    plots[def.stop] = { q, x, y: level, z };
+    landmarks[stop.target] = new THREE.Vector3(x, level, z);
+  }
+  return { cells, clear, plots };
 }
 
 /* ------------------------------------------------------------------ */
@@ -959,44 +1080,6 @@ export function createScenes(world, ctx) {
   const items = [];
   let dead = false;
 
-  function snap(S, lx, lz, tiles, unique) {
-    const c = Math.cos(S.az), s = Math.sin(S.az);
-    let x = S.lm.x + lx * c + lz * s, z = S.lm.z - lx * s + lz * c;
-    const col = Math.floor(x + W / 2), row = Math.floor(z + H / 2);
-    const ok = (cc, rr) => cc >= 0 && rr >= 0 && cc < W && rr < H && tiles.includes(g.tiles[rr * W + cc]) && !(unique && S.used.has(rr * W + cc));
-    let cell = -1;
-    if (ok(col, row)) cell = row * W + col;
-    else {
-      let best = Infinity;
-      for (let dy = -3; dy <= 3; dy++)
-        for (let dx = -3; dx <= 3; dx++) {
-          if (!ok(col + dx, row + dy)) continue;
-          const d = (col + dx - W / 2 + 0.5 - x) ** 2 + (row + dy - H / 2 + 0.5 - z) ** 2;
-          if (d < best) { best = d; cell = (row + dy) * W + col + dx; }
-        }
-    }
-    if (cell < 0) cell = Math.min(H - 1, Math.max(0, row)) * W + Math.min(W - 1, Math.max(0, col));
-    const ccx = (cell % W) - W / 2 + 0.5, ccz = Math.floor(cell / W) - H / 2 + 0.5;
-    // Stay inside the chosen cell, so the item stands on its column.
-    const lim = unique ? 0 : 0.32;
-    x = ccx + Math.max(-lim, Math.min(lim, x - ccx));
-    z = ccz + Math.max(-lim, Math.min(lim, z - ccz));
-    S.used.add(cell);
-    return { x, z, y: Math.max(heights[cell], 0), cell };
-  }
-
-  // Highest ground under an item's rectangle (w x d, turned with the item).
-  function footprintTop(S, spec, x0, z0) {
-    const [fw, fd] = spec.footprint, a = S.az + (spec.yaw || 0) * DEG, c = Math.cos(a), s = Math.sin(a);
-    let top = 0;
-    for (let u = -fw / 2; u <= fw / 2 + 1e-6; u += 0.4)
-      for (let v = -fd / 2; v <= fd / 2 + 1e-6; v += 0.4) {
-        const col = Math.floor(x0 + u * c + v * s + W / 2), row = Math.floor(z0 - u * s + v * c + H / 2);
-        if (col >= 0 && row >= 0 && col < W && row < H) top = Math.max(top, heights[row * W + col]);
-      }
-    return top;
-  }
-
   function spawn(S, spec, si, k) {
     const holder = new THREE.Group(), pivot = new THREE.Group();
     holder.add(pivot);
@@ -1007,18 +1090,21 @@ export function createScenes(world, ctx) {
       const b = S.placed[spec.on].base;
       pos = { x: b.x, z: b.z, y: b.y + (spec.y || 0) };
     } else if (spec.around != null) {
-      pos = { x: S.lm.x, y: S.lm.y, z: S.lm.z };
+      pos = { x: S.P.x, y: S.P.y, z: S.P.z };
+    } else if (spec.from != null) {
+      const [ax, az, ay] = S.placed[spec.from].anchor, c = Math.cos(S.th), s = Math.sin(S.th);
+      const lx = ax + spec.at[0], lz = az + spec.at[1];
+      pos = { x: S.P.x + lx * c + lz * s, z: S.P.z - lx * s + lz * c, y: (spec.water ? 0 : ay) + (spec.y || 0) };
     } else {
-      pos = snap(S, spec.at[0], spec.at[1], spec.tiles || S.def.tiles, spec.unique);
-      if (spec.footprint) pos.y = footprintTop(S, spec, pos.x, pos.z);
-      if (spec.water) pos.y = 0;
+      const [lx, lz] = spec.at, c = Math.cos(S.th), s = Math.sin(S.th);
+      pos = { x: S.P.x + lx * c + lz * s, z: S.P.z - lx * s + lz * c, y: spec.water ? 0 : S.P.y };
       pos.y += spec.y || 0;
     }
     holder.position.set(pos.x, pos.y, pos.z);
-    holder.rotation.y = S.az + (spec.yaw || 0) * DEG;
+    holder.rotation.y = S.th + ((spec.r || 0) * 90 + (spec.yaw || 0)) * DEG;
     const it = {
       spec, holder, pivot, content: null, base: { x: pos.x, y: pos.y - (spec.y || 0), z: pos.z },
-      stop: S.def.stop, delay: world.born + (reduceMotion ? 0 : 2.2 + si * 0.06 + k * 0.08), readyAt: Infinity, data: {},
+      stop: S.def.stop, delay: world.born + (reduceMotion ? 0 : 2.2 + si * 0.06 + k * 0.08), readyAt: Infinity, data: {}, world, S,
     };
     if (spec.around != null) {
       const c = spec.around === "center" ? world.landmarks.center : S.placed[spec.around].base;
@@ -1039,8 +1125,8 @@ export function createScenes(world, ctx) {
   }
 
   SCENES.forEach((def, si) => {
-    const stop = STOPS[def.stop];
-    const S = { def, az: stop.az * DEG, lm: world.landmarks[stop.target], used: new Set(), placed: [] };
+    const P = world.plots[def.stop];
+    const S = { def, P, th: P.q * (Math.PI / 2), placed: [] };
     def.items.forEach((spec, k) => S.placed.push(spawn(S, spec, si, k)));
   });
 

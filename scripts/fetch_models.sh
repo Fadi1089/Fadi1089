@@ -20,7 +20,6 @@ cat|qKICY6xla2|https://static.poly.pizza/67f5e3fe-37ee-4c86-95c8-d269d8c9f8ba.gl
 campfire|i6UFAevfcu|https://static.poly.pizza/bf4a5ed8-486b-4863-a654-fade1a9eaa39.glb|Campfire|Kenney|CC0 1.0
 printer|77K2TCL5Lz|https://static.poly.pizza/d113dfe6-cda8-4153-b95e-e33bb54e6171.glb|Printer|CreativeTrio|CC0 1.0
 folder|emdPCRNhTX|https://static.poly.pizza/de17267e-5c4e-4299-b57c-d351b8c24ee8.glb|Folder|reyshapes|CC0 1.0
-paper|4qDtAbPYnT|https://static.poly.pizza/c5af67bc-34d4-46fa-8d29-e7c02b80ba68.glb|Paper|Quaternius|CC0 1.0
 radio|TPqvwkyWdV|https://static.poly.pizza/7ed34c76-5ef7-4b70-b7d8-ce06e8128b07.glb|Radio|Quaternius|CC0 1.0
 speaker|YaVrUj51TV|https://static.poly.pizza/3ec01982-44db-44d0-b041-4e7ea8cecac3.glb|Speaker Small|Kenney|CC0 1.0
 mic|yqbacXdPsg|https://static.poly.pizza/b6976679-945a-4914-8857-093a0c6ecb18.glb|Mic|iPoly3D|CC0 1.0
@@ -35,7 +34,6 @@ toolbox|3ImQcIK0Gp|https://static.poly.pizza/7c2b3946-0ee2-4626-b582-c280f1704df
 wrench|POJHQLnLvB|https://static.poly.pizza/cfa77cff-e66e-40d4-8ad9-aecafe283475.glb|Wrench|CreativeTrio|CC0 1.0
 screen|V5Qo141OcB|https://static.poly.pizza/2af0158d-c560-4b1a-92e3-b50a51149b16.glb|Computer Screen|Kenney|CC0 1.0
 server|6ijQclm8jxw|https://static.poly.pizza/a9b585dc-68f4-4a3b-a6b2-ec729cb92aa3.glb|server rack|Jeremy Eyring|CC-BY 3.0
-scaffold|AYQd5RQ8w4|https://static.poly.pizza/79ea8731-ae53-44df-a52d-bba8a1f8d441.glb|Scaffolding|lakescorp|CC0 1.0
 mailbox|2olZ0G8iur|https://static.poly.pizza/2077ee81-a657-45a1-9809-84890a3fdc34.glb|Mailbox|CreativeTrio|CC0 1.0
 bottle|NxbygmpVwR|https://static.poly.pizza/2da3d98d-b72f-4934-8816-7000297115f6.glb|Old Bottle|MiniPoly|CC0 1.0
 plane|75WQH5E29tF|https://static.poly.pizza/13ee3d74-48dd-475b-a6d0-1068b77f72f2.glb|Paper airplane|Poly by Google|CC-BY 3.0'

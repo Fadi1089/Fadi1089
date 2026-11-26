@@ -1,7 +1,9 @@
 # Handoff: portfolio camera-stop scenes
 
 ## Status (2026-11-26): done
-All eight scenes are built in `site/props.js` (camera stops shared in `site/stops.js`), with 25 models in `site/models/` and procedural fallbacks for each. Changes from the plan below:
+All eight scenes are built in `site/props.js` (camera stops shared in `site/stops.js`), with 23 models in `site/models/` and procedural fallbacks for each. Changes from the plan below:
+- Every scene stands on a **plot**: `planPlots()` picks a block of cells near the landmark, levels it to one height, retiles it (a forest clearing, a beach patch, a snow terrace), turns it to the grid side facing the camera, and keeps a one-cell border free of trees/houses/rocks. Items are laid out in plot units with quarter turns, so nothing hangs off a column edge or sits at a random angle.
+- Pages are grounded: the CV is a notice board, the form sits on a music stand. The stack has a procedural scaffold around it; the contact beach has a jetty that starts at the waterline. Paper and scaffold models were dropped for procedural ones.
 - TrisTik is a fenced game board in the game's own look (one biome per piece, last piece turns and drops into its gap), not floating pieces + windmill. The windmill model was dropped.
 - On desktop each scene centres itself in the space right of its text panel (`stopParams` in `main.js` measures the panel); `up` raises the look point, `mlift` lifts the subject on phones.
 - The hero orbit unwinds when you scroll away, so scenes face the camera.
