@@ -40,6 +40,7 @@ export const I18N = {
     "contact.h": "Write to me",
     "contact.p": "Always up for talking web, games, 3D or a fun project, in French, English or German.",
     "quote": "“Plans are great. But sometimes you just have to pretend you know what you’re doing.” — Jim Halpert",
+    "credits.h": "3D models from Poly Pizza",
   },
   fr: {
     "meta.title": "Fadi Sultan · Développeur web & jeux vidéo",
@@ -81,6 +82,7 @@ export const I18N = {
     "contact.h": "Écris-moi",
     "contact.p": "Toujours partant pour parler web, jeux vidéo, 3D ou d’un projet sympa, en français, en anglais ou en allemand.",
     "quote": "« Les plans, c’est bien. Mais parfois, il faut juste faire semblant de savoir ce qu’on fait. » — Jim Halpert",
+    "credits.h": "Modèles 3D de Poly Pizza",
   },
   de: {
     "meta.title": "Fadi Sultan · Web- & Spieleentwickler",
@@ -122,5 +124,6 @@ export const I18N = {
     "contact.h": "Schreib mir",
     "contact.p": "Immer offen für Gespräche über Web, Spiele, 3D oder ein spannendes Projekt, auf Französisch, Englisch oder Deutsch.",
     "quote": "„Pläne sind gut. Aber manchmal muss man einfach so tun, als wüsste man, was man tut.“ — Jim Halpert",
+    "credits.h": "3D-Modelle von Poly Pizza",
   },
 };

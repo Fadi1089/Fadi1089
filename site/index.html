@@ -15,7 +15,12 @@
   <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <script type="importmap">
-    { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js" } }
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+      }
+    }
   </script>
   <script type="module" src="main.js"></script>
 </head>
@@ -143,6 +148,10 @@
         <p class="mail"><a href="mailto:fadi.sultan.dev@gmail.com">fadi.sultan.dev<wbr>@gmail.com</a></p>
         <p class="links"><a href="https://github.com/Fadi1089">github.com/Fadi1089</a></p>
         <p class="quote" data-i18n="quote">“Plans are great. But sometimes you just have to pretend you know what you’re doing.” — Jim Halpert</p>
+        <details id="credits" class="credits" hidden>
+          <summary class="mono" data-i18n="credits.h">3D models from Poly Pizza</summary>
+          <ul></ul>
+        </details>
       </div>
     </section>
   </main>

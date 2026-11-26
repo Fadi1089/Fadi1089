@@ -18,7 +18,6 @@ MODELS='desk|6PbVkqPzEU|https://static.poly.pizza/0716218b-3aae-48e6-8ddd-185cf7
 laptop|GnbwSUiVty|https://static.poly.pizza/8190e659-7079-442f-9ed9-083f67b1746b.glb|Laptop|Kenney|CC0 1.0
 cat|qKICY6xla2|https://static.poly.pizza/67f5e3fe-37ee-4c86-95c8-d269d8c9f8ba.glb|Cat|Quaternius|CC0 1.0
 campfire|i6UFAevfcu|https://static.poly.pizza/bf4a5ed8-486b-4863-a654-fade1a9eaa39.glb|Campfire|Kenney|CC0 1.0
-windmill|WUbU1Nct2W|https://static.poly.pizza/6bf79810-ea32-4451-84e9-221e69020a40.glb|Windmill|Quaternius|CC0 1.0
 printer|77K2TCL5Lz|https://static.poly.pizza/d113dfe6-cda8-4153-b95e-e33bb54e6171.glb|Printer|CreativeTrio|CC0 1.0
 folder|emdPCRNhTX|https://static.poly.pizza/de17267e-5c4e-4299-b57c-d351b8c24ee8.glb|Folder|reyshapes|CC0 1.0
 paper|4qDtAbPYnT|https://static.poly.pizza/c5af67bc-34d4-46fa-8d29-e7c02b80ba68.glb|Paper|Quaternius|CC0 1.0

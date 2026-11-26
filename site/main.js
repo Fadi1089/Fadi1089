@@ -1,6 +1,8 @@
 import * as THREE from "three";
 import { generate, rng, T } from "./wfc.js";
 import { I18N } from "./i18n.js";
+import { STOPS } from "./stops.js";
+import { createScenes, sceneZones, loadManifest } from "./props.js";
 
 /* ------------------------------------------------------------------ */
 /* Language                                                            */
@@ -167,9 +169,14 @@ function buildWorld(seed) {
   }
   group.add(cols);
 
+  // Landmarks first: the scenes at the camera stops need clear ground.
+  const landmarks = findLandmarks(g, heights);
+  const zones = sceneZones(landmarks);
+  const blocked = (kind, x, z) => zones.some((q) => (x - q.x) ** 2 + (z - q.z) ** 2 < q.r * q.r && !(q.keepHouses && (kind === "wall" || kind === "roof")));
+
   // Props: trees, houses and rocks, each tied to the cell it stands on.
   const props = { tree: [], trunk: [], wall: [], roof: [], rock: [] };
-  const add = (kind, cell, x, z, s, rot) => props[kind].push({ cell, x, z, s, rot });
+  const add = (kind, cell, x, z, s, rot) => { if (!blocked(kind, x, z)) props[kind].push({ cell, x, z, s, rot }); };
   for (let i = 0; i < N; i++) {
     const t = g.tiles[i];
     const [cx, cz] = cellXZ(i);
@@ -205,7 +212,7 @@ function buildWorld(seed) {
   }
 
   scene.add(group);
-  return { g, group, cols, heights, startAt, propMeshes, born: clock.getElapsedTime(), done: false, ms, landmarks: findLandmarks(g, heights) };
+  return { g, group, cols, heights, startAt, propMeshes, born: clock.getElapsedTime(), done: false, ms, landmarks };
 }
 
 function disposeWorld(w) {
@@ -256,10 +263,15 @@ function updateWorld(w, now) {
 
 function findLandmarks(g, heights) {
   const N = GRID * GRID;
-  const score = (want, radius) => {
+  // Keep each scene clear of the ones already placed.
+  const far = (i, avoid, d) => {
+    const [x, z] = cellXZ(i);
+    return avoid.every((p) => (x - p.x) ** 2 + (z - p.z) ** 2 >= d * d);
+  };
+  const score = (want, radius, avoid = [], minD = 7) => {
     let best = -1, bestS = -1;
     for (let i = 0; i < N; i++) {
-      if (!want.includes(g.tiles[i])) continue;
+      if (!want.includes(g.tiles[i]) || !far(i, avoid, minD)) continue;
       const x0 = i % GRID, y0 = (i / GRID) | 0;
       let s = 0;
       for (let dy = -radius; dy <= radius; dy++)
@@ -270,7 +282,7 @@ function findLandmarks(g, heights) {
         }
       if (s > bestS) { bestS = s; best = i; }
     }
-    return best;
+    return best < 0 && avoid.length ? score(want, radius) : best;
   };
   const at = (i, fallback) => {
     if (i < 0) return fallback.clone();
@@ -278,24 +290,25 @@ function findLandmarks(g, heights) {
     return new THREE.Vector3(x, Math.max(heights[i], 0), z);
   };
   const center = new THREE.Vector3(0, 0.5, 0);
-  // Beach facing the camera side (south), and one on the far side.
-  let south = -1, north = -1, sBest = -Infinity, nBest = -Infinity;
-  for (let i = 0; i < N; i++) {
-    if (g.tiles[i] !== T.SAND) continue;
-    const z = (i / GRID) | 0, x = i % GRID;
-    const cx = Math.abs(x - GRID / 2);
-    if (z - cx * 0.6 > sBest) { sBest = z - cx * 0.6; south = i; }
-    if (-z - cx * 0.6 > nBest) { nBest = -z - cx * 0.6; north = i; }
-  }
-  return {
-    center,
-    village: at(score([T.VILLAGE], 2), center),
-    forest: at(score([T.FOREST], 2), center),
-    peak: at(score([T.SNOW], 1), center),
-    rock: at(score([T.ROCK, T.SNOW], 2), center),
-    south: at(south, center),
-    north: at(north, center),
+  // Beaches on each side: the one that sticks out furthest that way.
+  const beach = (fn, avoid = []) => {
+    let best = -1, bestS = -Infinity;
+    for (let i = 0; i < N; i++) {
+      if (g.tiles[i] !== T.SAND || !far(i, avoid, 8)) continue;
+      const s = fn(i % GRID - GRID / 2, ((i / GRID) | 0) - GRID / 2);
+      if (s > bestS) { bestS = s; best = i; }
+    }
+    return best < 0 && avoid.length ? beach(fn) : best;
   };
+  const south = at(beach((x, z) => z - Math.abs(x) * 0.6), center);
+  const north = at(beach((x, z) => -z - Math.abs(x) * 0.6), center);
+  const west = at(beach((x, z) => -x - Math.abs(z) * 0.6, [south, north]), center);
+  const east = at(beach((x, z) => x - Math.abs(z) * 0.6, [south, north, west]), center);
+  const village = at(score([T.VILLAGE], 2, [south, north, west]), center);
+  const forest = at(score([T.FOREST], 2, [village, south, north, west]), center);
+  const peak = at(score([T.SNOW], 1), center);
+  const rock = at(score([T.ROCK, T.SNOW], 2, [peak, forest, village]), center);
+  return { center, village, forest, peak, rock, south, north, west, east };
 }
 
 /* ------------------------------------------------------------------ */
@@ -329,30 +342,26 @@ const clouds = new THREE.Group();
 /* Camera flight: one stop per section, driven by scroll               */
 /* ------------------------------------------------------------------ */
 
-// target: landmark name, az: degrees around it, dist: horizontal distance,
-// h: height above target, shift: how far the subject slides right (desktop)
-const STOPS = {
-  hero: { target: "center", az: 18, dist: 44, h: 31, shift: 17 },
-  about: { target: "south", az: -25, dist: 13, h: 7, shift: 3.5 },
-  tristik: { target: "village", az: 40, dist: 11, h: 8, shift: 3.5 },
-  cvie: { target: "forest", az: 115, dist: 12, h: 8.5, shift: 3.5 },
-  formio: { target: "north", az: 190, dist: 13, h: 7.5, shift: 3.5 },
-  wfc: { target: "center", az: 200, dist: 0.01, h: 62, shift: 14, top: true },
-  adeli: { target: "peak", az: 300, dist: 15, h: 9, shift: 4.5 },
-  stack: { target: "rock", az: 250, dist: 26, h: 9, shift: 7 },
-  contact: { target: "center", az: 378, dist: 52, h: 36, shift: 12 },
-};
-
 const sections = [...document.querySelectorAll("[data-cam]")];
 let anchors = [];
+let panelRight = [];
 function measure() {
   anchors = sections.map((s, i) => (i === 0 ? 0 : s.offsetTop + s.offsetHeight / 2 - innerHeight / 2));
+  panelRight = sections.map((s) => s.querySelector(".panel")?.getBoundingClientRect().right ?? 0);
 }
 
-function stopParams(name, mobile) {
+function stopParams(i, mobile) {
+  const name = sections[i].dataset.cam;
   const s = STOPS[name];
   const lm = world.landmarks[s.target];
-  return { tx: lm.x, ty: lm.y, tz: lm.z, az: s.az, dist: s.dist * (mobile ? 1.35 : 1), h: s.h * (mobile ? 1.3 : 1), shift: mobile ? 0 : s.shift, lift: mobile ? s.h * (name === "hero" ? 0.42 : 0.22) : 0 };
+  const dist = s.dist * (mobile ? 1.35 : 1), h = s.h * (mobile ? 1.3 : 1);
+  let shift = mobile ? 0 : s.shift;
+  if (!mobile && panelRight[i] && name !== "hero" && !s.top) {
+    // Centre the scene in the space right of the text panel.
+    const perPx = (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2) * Math.hypot(dist, h)) / innerHeight;
+    shift = Math.max(0, ((panelRight[i] + innerWidth) / 2 - innerWidth / 2) * perPx);
+  }
+  return { tx: lm.x, ty: lm.y + (s.up || 0), tz: lm.z, az: s.az, dist, h, shift, lift: mobile ? s.h * (s.mlift ?? (name === "hero" ? 0.42 : 0.22)) : 0 };
 }
 
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -370,24 +379,39 @@ function targetCam() {
   const y = scrollY;
   let i = 0;
   while (i < anchors.length - 1 && y > anchors[i + 1]) i++;
-  const a = stopParams(sections[i].dataset.cam, mobile);
-  if (i >= anchors.length - 1) return a;
-  const b = stopParams(sections[i + 1].dataset.cam, mobile);
+  const na = sections[i].dataset.cam;
+  const a = stopParams(i, mobile);
+  if (i >= anchors.length - 1) return [a, { [na]: 1 }];
+  const nb = sections[i + 1].dataset.cam;
+  const b = stopParams(i + 1, mobile);
   const t = smooth(Math.min(1, Math.max(0, (y - anchors[i]) / (anchors[i + 1] - anchors[i]))));
   const out = {};
   for (const k of Object.keys(a)) out[k] = lerp(a[k], b[k], t);
   // Climb a little mid-flight so the path clears the peaks.
   out.h += Math.sin(t * Math.PI) * 6;
-  return out;
+  return [out, { [na]: 1 - t, [nb]: t }];
 }
+
+// How much each stop is in view (0..1), eased like the camera. The scenes
+// use it to fade their focus effects in and out.
+const weights = Object.fromEntries(Object.keys(STOPS).map((k) => [k, 0]));
+// Slow orbit of the hero view. It unwinds when you scroll away, so the
+// scenes at the stops face the camera.
+let orbit = 0;
 
 const look = new THREE.Vector3(), fwd = new THREE.Vector3(), right = new THREE.Vector3();
 function placeCamera(dt, now) {
-  const tc = targetCam();
+  const [tc, tw] = targetCam();
   const k = camInit ? 1 - Math.exp(-dt * 3.2) : 1;
   camInit = true;
   for (const key of Object.keys(cam)) cam[key] += (tc[key] - cam[key]) * k;
-  const drift = reduceMotion ? 0 : now * 1.2 + pointer.x * 6;
+  for (const key of Object.keys(weights)) weights[key] += ((tw[key] || 0) - weights[key]) * k;
+  if (!reduceMotion) {
+    orbit += dt * 1.2 * weights.hero;
+    orbit = ((((orbit + 180) % 360) + 360) % 360) - 180;
+    orbit -= orbit * (1 - Math.exp(-dt * 0.9)) * (1 - weights.hero);
+  }
+  const drift = reduceMotion ? 0 : orbit + Math.sin(now * 0.25) * 2.5 + pointer.x * 6;
   const az = THREE.MathUtils.degToRad(cam.az + drift);
   camera.position.set(cam.tx + Math.sin(az) * cam.dist, cam.ty + cam.h + (reduceMotion ? 0 : -pointer.y * 1.5), cam.tz + Math.cos(az) * cam.dist);
   look.set(cam.tx, cam.ty, cam.tz);
@@ -420,15 +444,20 @@ function resize() {
 }
 addEventListener("resize", resize);
 addEventListener("load", measure);
+// Fonts and images change the layout after load; keep the anchors in step.
+if ("ResizeObserver" in window) new ResizeObserver(measure).observe(document.querySelector("main"));
 
 function seedFromUrl() {
   const s = parseInt(new URLSearchParams(location.search).get("seed"), 10);
   return Number.isFinite(s) && s > 0 ? s : 1089;
 }
 
+let scenes = null;
 function grow(seed) {
+  if (scenes) scenes.dispose();
   if (world) disposeWorld(world);
   world = buildWorld(seed);
+  scenes = createScenes(world, { scene, clock, tileColors: TILE });
   showStat({ cells: GRID * GRID, ms: world.ms, seed });
 }
 
@@ -438,6 +467,23 @@ document.getElementById("regen").addEventListener("click", () => {
   url.searchParams.set("seed", seed);
   history.replaceState(null, "", url);
   grow(seed);
+});
+
+// Credits for the 3D models, listed from the manifest the fetch script writes.
+loadManifest().then((m) => {
+  const list = m.models || [];
+  const box = document.getElementById("credits");
+  if (!list.length || !box) return;
+  const ul = box.querySelector("ul");
+  for (const e of list) {
+    const li = document.createElement("li");
+    const a = document.createElement("a");
+    a.href = `https://poly.pizza/m/${encodeURIComponent(e.id)}`;
+    a.textContent = e.title;
+    li.append(a, ` · ${e.author} · ${e.licence}`);
+    ul.append(li);
+  }
+  box.hidden = false;
 });
 
 resize();
@@ -465,5 +511,6 @@ renderer.setAnimationLoop(() => {
   }
 
   placeCamera(dt, now);
+  scenes.update(now, dt, weights);
   renderer.render(scene, camera);
 });

@@ -1,6 +1,15 @@
 # Handoff: portfolio camera-stop scenes
 
-Paste into Claude Code locally: `Read HANDOFF.md and do the task.`
+## Status (2026-11-26): done
+All eight scenes are built in `site/props.js` (camera stops shared in `site/stops.js`), with 25 models in `site/models/` and procedural fallbacks for each. Changes from the plan below:
+- TrisTik is a fenced game board in the game's own look (one biome per piece, last piece turns and drops into its gap), not floating pieces + windmill. The windmill model was dropped.
+- On desktop each scene centres itself in the space right of its text panel (`stopParams` in `main.js` measures the panel); `up` raises the look point, `mlift` lifts the subject on phones.
+- The hero orbit unwinds when you scroll away, so scenes face the camera.
+- `MODEL_FIX` in `props.js` holds the turns that stand some models up / face them forward.
+
+The original brief follows for reference.
+
+---
 
 ## Goal
 The portfolio (`site/`, live at https://fadi1089.github.io/Fadi1089/) is a Three.js voxel island grown by Wave Function Collapse. Scrolling flies the camera to a landmark per section. **Task: at each landmark, place a small 3D scene relevant to that section**, built from Poly Pizza models.
