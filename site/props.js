@@ -12,6 +12,7 @@ import * as SkeletonUtils from "three/addons/utils/SkeletonUtils.js";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { T } from "./wfc.js";
 import { STOPS } from "./stops.js";
+import { waterY } from "./sea.js";
 
 const DEG = Math.PI / 180;
 const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -629,31 +630,44 @@ const logSeat = () => grp(rot(cyl(0.07, 0.07, 0.5, DARKWOOD, 0, 0.07, 0.25, 8), 
 function seaJetty(it) {
   const { world, S, spec } = it;
   const W = world.g.W, H = world.g.H, c = Math.cos(S.th), s = Math.sin(S.th);
-  const [lx, lz0] = spec.at, len = spec.len || 1.8;
-  // Walk out until the ground is under water; the deck starts at that edge,
-  // level with the last bit of beach, so it meets the sand without a gap.
-  let lz = lz0, shore = it.base.y;
-  for (; lz < lz0 + 6; lz += 0.05) {
-    const x = S.P.x + lx * c + lz * s, z = S.P.z - lx * s + lz * c;
-    const h = world.heights[Math.floor(z + H / 2) * W + Math.floor(x + W / 2)];
-    if (h < 0.1) break;
-    shore = h;
+  const [lx0, lz0] = spec.at, want = spec.len || 1.8, half = 0.28;
+  // Ground height under a point given in plot coordinates.
+  const ground = (px, pz) => {
+    const x = S.P.x + px * c + pz * s, z = S.P.z - px * s + pz * c;
+    const col = Math.floor(x + W / 2), row = Math.floor(z + H / 2);
+    return col < 0 || row < 0 || col >= W || row >= H ? -2 : world.heights[row * W + col];
+  };
+  // Highest ground across the jetty's width at distance pz.
+  const across = (lx, pz) => Math.max(ground(lx - half, pz), ground(lx, pz), ground(lx + half, pz));
+  // Try a few lanes; take the one that reaches open water soonest and has
+  // the longest run of water after it, so the deck never crosses land.
+  let best = null;
+  for (const lx of [lx0, lx0 - 0.4, lx0 + 0.4, lx0 - 0.8, lx0 + 0.8]) {
+    let lz = lz0;
+    while (lz < lz0 + 5 && across(lx, lz) >= 0.1) lz += 0.05;
+    if (lz >= lz0 + 5) continue;
+    let len = 0;
+    while (len < want && across(lx, lz + len + 0.05) < 0.1) len += 0.05;
+    const score = len - (lz - lz0) * 0.5;
+    if (!best || score > best.score) best = { lx, lz, len, score, shore: across(lx, lz - 0.05) };
   }
-  const deck = Math.max(0.3, shore), start = lz - 0.02;
-  const g = jetty(len, deck);
-  g.position.set(0, -it.base.y, start - lz0);
-  it.anchor = [lx, start + len, deck];
-  return grp(g);
-}
-
-// A small wooden jetty: planks on posts, deck at height top, along +z.
-function jetty(len, top) {
+  if (!best) return grp();
+  const { lx, lz } = best, len = Math.max(0.6, best.len);
+  // The deck sits just above the last bit of beach and starts on top of it,
+  // so wood and sand never share a surface.
+  const deck = Math.max(0.3, best.shore) + 0.03, start = lz - 0.14;
   const g = new THREE.Group();
-  for (let z = 0; z < len; z += 0.17) g.add(box(0.5, 0.04, 0.14, z % 0.34 < 0.17 ? "#b07a4a" : "#a06c40", 0, top - 0.04, z + 0.07));
-  for (let z = 0.25; z < len; z += 0.55)
-    for (const x of [-0.22, 0.22]) g.add(cyl(0.035, 0.035, top + 1.2, DARKWOOD, x, -1.2, z, 6));
-  g.userData.dims = { w: 0.5, h: top, d: len };
-  return g;
+  for (let z = 0; z < len + 0.14; z += 0.17) g.add(box(0.5, 0.04, 0.14, z % 0.34 < 0.17 ? "#b07a4a" : "#a06c40", 0, deck - 0.04, z + 0.07));
+  // Posts stand on the seabed under them, not through it.
+  for (let z = 0.4; z < len + 0.14; z += 0.55)
+    for (const x of [-0.22, 0.22]) {
+      const foot = Math.min(-0.05, ground(lx + x, start + z));
+      g.add(cyl(0.035, 0.035, deck - foot, DARKWOOD, x, foot, z, 6));
+    }
+  g.position.set(lx - lx0, -it.base.y, start - lz0);
+  it.anchor = [lx, start + len + 0.14, deck];
+  g.userData.dims = { w: 0.5, h: deck, d: len };
+  return grp(g);
 }
 
 const fireMats = [
@@ -740,20 +754,24 @@ const growBars = (it, t, dt, w) => {
 };
 
 // A fish circling in the shallows; every other one leaps now and then.
-const swim = (k) => (it, t) => {
+const swim = (k) => (it, t, dt, w, now) => {
   const { center: c, r } = it.data;
   const dir = k % 2 ? 1 : -1, sp = (0.3 + (k % 3) * 0.08) * dir;
   const a = t * (sp / r) + k * 2.1;
-  let y = -0.04 + Math.sin(t * 1.3 + k) * 0.02, pitch = 0;
+  const x = c.x + Math.cos(a) * r, z = c.z + Math.sin(a) * r;
+  // The model stands on its belly: keep its top a little under the waves.
+  const fh = it.content?.userData.dims?.h ?? 0.25;
+  const under = waterY(x, z, now) - fh - 0.05;
+  let y = under + Math.sin(t * 1.3 + k) * 0.015, pitch = 0;
   if (k % 2 === 0) {
     const ph = (t + k * 2.7) % 12;
     if (ph < 0.9) {
       const u = ph / 0.9;
-      y = -0.04 + Math.sin(u * Math.PI) * 0.75;
+      y = under + Math.sin(u * Math.PI) * (0.75 + fh);
       pitch = (u - 0.5) * 1.8;
     }
   }
-  it.holder.position.set(c.x + Math.cos(a) * r, y, c.z + Math.sin(a) * r);
+  it.holder.position.set(x, y, z);
   it.holder.rotation.set(0, Math.atan2(-Math.sin(a) * dir, Math.cos(a) * dir), 0);
   it.pivot.rotation.set(pitch, Math.sin(t * 9 + k) * 0.06, 0);
 };
@@ -1041,10 +1059,11 @@ export function createScenes(world, ctx) {
       const b = S.placed[spec.on].base, [ox, oz] = spec.at || [0, 0], c = Math.cos(S.th), s = Math.sin(S.th);
       pos = { x: b.x + ox * c + oz * s, z: b.z - ox * s + oz * c, y: b.y + (spec.y || 0) };
     } else if (spec.swim != null) {
-      // Circle around a shallow cell next to the shore, picked from the seed.
-      const W = world.g.W, H = world.g.H, tl = world.g.tiles;
-      const nearLand = (i) => [-1, 1, -W, W, -2, 2, -2 * W, 2 * W].some((o) => tl[i + o] >= T.SAND);
-      S.shallow ??= [...tl.keys()].filter((i) => tl[i] === T.SHALLOW && i % W > 2 && i % W < W - 3 && i > 2 * W && i < (H - 2) * W && nearLand(i));
+      // Circle in open water a few cells off the shore (deep enough that the
+      // fish never touch the bottom), around a cell picked from the seed.
+      const W = world.g.W, H = world.g.H, tl = world.g.tiles, ld = world.g.landDist;
+      const around = [0, -1, 1, -W, W, -W - 1, -W + 1, W - 1, W + 1];
+      S.shallow ??= [...tl.keys()].filter((i) => ld && ld[i] >= 3 && ld[i] <= 5 && i % W > 2 && i % W < W - 3 && i > 2 * W && i < (H - 2) * W && around.every((o) => tl[i + o] === T.DEEP));
       const cell = S.shallow.length ? S.shallow[(world.g.seed * 7919 + spec.swim * 104729) % S.shallow.length] : 0;
       pos = { x: (cell % W) - W / 2 + 0.5, y: -0.1, z: Math.floor(cell / W) - H / 2 + 0.5 };
     } else if (spec.around != null) {
@@ -1064,7 +1083,7 @@ export function createScenes(world, ctx) {
       spec, holder, pivot, content: null, base: { x: pos.x, y: pos.y - (spec.y || 0), z: pos.z },
       stop: S.def.stop, delay: world.born + (reduceMotion ? 0 : world.ready + si * 0.06 + k * 0.06), readyAt: Infinity, data: {}, world, S,
     };
-    if (spec.swim != null) it.data = { center: { x: pos.x, z: pos.z }, r: 0.5 + (spec.swim % 3) * 0.25 };
+    if (spec.swim != null) it.data = { center: { x: pos.x, z: pos.z }, r: 0.45 + (spec.swim % 3) * 0.22 };
     if (spec.around != null) {
       const c = spec.around === "center" ? world.landmarks.center : S.placed[spec.around].base;
       it.data.center = { x: c.x, y: spec.around === "center" ? 0 : c.y, z: c.z };
@@ -1103,7 +1122,7 @@ export function createScenes(world, ctx) {
         it.holder.visible = p > 0;
         if (p <= 0) continue;
         if (!it.spec.noPop) it.holder.scale.setScalar(Math.max(0.001, easeBack(p)));
-        it.spec.anim?.(it, reduceMotion ? 100 : now - start, dt, weights[it.stop] || 0);
+        it.spec.anim?.(it, reduceMotion ? 100 : now - start, dt, weights[it.stop] || 0, now);
         if (it.mixer && !reduceMotion) it.mixer.update(dt);
       }
       wfc.update(now, weights.wfc || 0);
