@@ -216,13 +216,18 @@ function buildWorld(seed) {
       add("rock", i, x, z, 0.6 + r() * 0.8, r() * 6.3);
     }
   }
-  // Trees use the tree model when it loaded (one instanced mesh per part of
-  // it), else the built-in cone and trunk.
+  // Trees use the tree models when they loaded: each tree gets one of the
+  // variants, drawn as one instanced mesh per variant part. Otherwise the
+  // built-in cone and trunk.
   const parts = [];
   for (const [kind, list] of Object.entries(props)) {
     if (treeParts && kind === "trunk") continue;
-    if (treeParts && kind === "tree") for (const p of treeParts) parts.push([p.geometry, p.material, list]);
-    else parts.push([{ tree: treeGeo, trunk: trunkGeo, wall: wallGeo, roof: roofGeo, rock: rockGeo }[kind], mat[kind], list]);
+    if (treeParts && kind === "tree") {
+      treeParts.forEach((variant, vi) => {
+        const mine = list.filter((p, k) => (p.cell * 7 + k) % treeParts.length === vi);
+        for (const p of variant) parts.push([p.geometry, p.material, mine]);
+      });
+    } else parts.push([{ tree: treeGeo, trunk: trunkGeo, wall: wallGeo, roof: roofGeo, rock: rockGeo }[kind], mat[kind], list]);
   }
   const propMeshes = parts.map(([geo, material, list]) => {
     const m = new THREE.InstancedMesh(geo, material, Math.max(1, list.length));
@@ -528,11 +533,13 @@ loadManifest().then((m) => {
   box.hidden = false;
 });
 
-// The island's trees come from a model when it is there. Wait for it a
-// moment before the first island, then carry on with the built-in trees.
+// The island's trees come from a model pack when it is there: these pieces of
+// it are single trees (the pack also holds rocks, a ground slab and clouds).
+// Wait for it a moment before the first island, then carry on without it.
+const TREE_PIECES = ["group2112331936", "group546125134", "group100681590", "group2102696020", "group1206298165", "group1610579876"];
 let treeParts = null;
 await Promise.race([
-  loadModelParts("tree", 0.95).then((p) => { treeParts = p; }, () => {}),
+  loadModelParts("tree", 0.95, TREE_PIECES).then((p) => { treeParts = p; }, () => {}),
   new Promise((r) => setTimeout(r, 2500)),
 ]);
 

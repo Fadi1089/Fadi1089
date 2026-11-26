@@ -7,7 +7,7 @@ All eight scenes are built in `site/props.js` (camera stops shared in `site/stop
 - Formio is a big phone showing a form (audio clip, choices) next to a bar chart that grows as the stop comes into view. Stack is four labelled strata (systems, back-end, front-end, 3D), each coloured like a terrain tile.
 - Island growth (`updateWorld` in `main.js`): the map fills in flat on the water in WFC order, then land rises and sea sinks from the centre out, then trees and houses grow; scenes appear only after that (`world.ready`).
 - `sea.js`: water tinted by distance to land, foam along the coast, sun glints. A few fish swim in the shallows (props.js, "sea" scene).
-- **Models still to download by hand** (Poly Pizza only serves them to its own page): chair, cat, tree (used for all island trees), fish, clownfish. See the MANUAL list in `scripts/fetch_models.sh`; save each as `site/models/<name>.glb`, then run the script to rebuild the manifest. Until then the site uses built-in stand-ins.
+- Hand-downloaded models (Poly Pizza only serves newer uploads to its own page): chair, cat, tree, fish, listed as MANUAL in `scripts/fetch_models.sh`. `tree.glb` is the "Tree Assets" pack: the island uses six single trees from it (`TREE_PIECES` in `main.js`), one variant per tree. The fish model is an animated clownfish.
 - TrisTik is a fenced game board in the game's own look (one biome per piece, last piece turns and drops into its gap), not floating pieces + windmill. The windmill model was dropped.
 - On desktop each scene centres itself in the space right of its text panel (`stopParams` in `main.js` measures the panel); `up` raises the look point, `mlift` lifts the subject on phones.
 - The hero orbit unwinds when you scroll away, so scenes face the camera.

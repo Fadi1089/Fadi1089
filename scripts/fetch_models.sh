@@ -33,9 +33,8 @@ plane|75WQH5E29tF|https://static.poly.pizza/13ee3d74-48dd-475b-a6d0-1068b77f72f2
 # them as site/models/<name>.glb; this script then lists them in the manifest.
 MANUAL='chair|UfKvrZBK6C|Office Chair|Quaternius|CC0 1.0
 cat|dYKICaHpK0c|Cat|Poly by Google|CC-BY 3.0
-tree|2_fv3tn3NG_|Forest|Poly by Google|CC-BY 3.0
-fish|BEcU9rjiAq|Fish|Quaternius|CC0 1.0
-clownfish|769fHo3eEB|Clownfish|Quaternius|CC0 1.0'
+tree|eLqmfpqu_Ig|Tree Assets|Ben Desai|CC-BY 3.0
+fish|BEcU9rjiAq|Fish|Quaternius|CC0 1.0'
 
 ok=0; failed=""
 entries=""

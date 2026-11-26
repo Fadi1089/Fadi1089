@@ -90,21 +90,28 @@ function fit(obj, o) {
   return wrap;
 }
 
-// A model as plain parts (geometry + material), baked to stand on y = 0,
-// centred, at the given height: for drawing many copies with InstancedMesh.
-export async function loadModelParts(name, height) {
+// Pieces of a model as plain parts (geometry + material), each piece baked to
+// stand on y = 0, centred, at the given height: for drawing many copies with
+// InstancedMesh. pieces: node names to take (a model pack holds several
+// things); without it the whole model is one piece. Returns one parts list
+// per piece, or null.
+export async function loadModelParts(name, height, pieces) {
   const gltf = await getModel(name);
   if (!gltf) return null;
   const root = gltf.scene;
   root.updateMatrixWorld(true);
-  const box = new THREE.Box3().setFromObject(root), size = box.getSize(new THREE.Vector3()), c = box.getCenter(new THREE.Vector3());
-  const s = height / size.y, parts = [];
-  root.traverse((o) => {
-    if (!o.isMesh || o.isSkinnedMesh) return;
-    const geo = o.geometry.clone().applyMatrix4(o.matrixWorld).translate(-c.x, -box.min.y, -c.z).scale(s, s, s);
-    parts.push({ geometry: geo, material: o.material });
-  });
-  return parts.length ? parts : null;
+  const objs = pieces ? pieces.map((n) => root.getObjectByName(n)).filter(Boolean) : [root];
+  const out = objs.map((obj) => {
+    const box = new THREE.Box3().setFromObject(obj), size = box.getSize(new THREE.Vector3()), c = box.getCenter(new THREE.Vector3());
+    const s = height / size.y, parts = [];
+    obj.traverse((o) => {
+      if (!o.isMesh || o.isSkinnedMesh) return;
+      const geo = o.geometry.clone().applyMatrix4(o.matrixWorld).translate(-c.x, -box.min.y, -c.z).scale(s, s, s);
+      parts.push({ geometry: geo, material: o.material });
+    });
+    return parts;
+  }).filter((p) => p.length);
+  return out.length ? out : null;
 }
 
 function fromModel(gltf, spec) {
@@ -215,8 +222,7 @@ const FALLBACK = {
   plane: () => grp(mesh(paperPlaneGeo(), M(PAPER, { side: THREE.DoubleSide }))),
   chair: () => grp(...[0, 1, 2, 3, 4].map((k) => rot(box(0.3, 0.025, 0.04, "#2b2f36", 0, 0.02, 0), 0, k * 1.2566, 0)),
     cyl(0.025, 0.025, 0.22, METAL, 0, 0.02, 0), box(0.42, 0.07, 0.4, "#3b6ea8", 0, 0.24, 0), box(0.4, 0.4, 0.06, "#2b2f36", 0, 0.3, -0.2)),
-  fish: () => grp(scl(ball(0.12, "#9fb4c2", 0, 0.1, 0), 0.55, 0.8, 1.5), rot(cone(0.08, 0.12, "#7f95a5", 0, 0.1, -0.22, 4), -Math.PI / 2)),
-  clownfish: () => grp(scl(ball(0.12, "#f08a3c", 0, 0.1, 0), 0.6, 0.85, 1.3), scl(ball(0.122, "#ffffff", 0, 0.1, 0.02), 0.62, 0.86, 0.25), rot(cone(0.08, 0.12, "#f08a3c", 0, 0.1, -0.2, 4), -Math.PI / 2)),
+  fish: () => grp(scl(ball(0.12, "#f08a3c", 0, 0.1, 0), 0.6, 0.85, 1.3), scl(ball(0.122, "#ffffff", 0, 0.1, 0.02), 0.62, 0.86, 0.25), rot(cone(0.08, 0.12, "#f08a3c", 0, 0.1, -0.2, 4), -Math.PI / 2)),
 };
 
 /* ------------------------------------------------------------------ */
@@ -741,7 +747,7 @@ const swim = (k) => (it, t) => {
   }
   it.holder.position.set(c.x + Math.cos(a) * r, y, c.z + Math.sin(a) * r);
   it.holder.rotation.set(0, Math.atan2(-Math.sin(a) * dir, Math.cos(a) * dir), 0);
-  it.pivot.rotation.set(pitch, Math.sin(t * 9 + k) * 0.18, 0);
+  it.pivot.rotation.set(pitch, Math.sin(t * 9 + k) * 0.06, 0);
 };
 
 const waddle = (k) => (it, t) => {
@@ -860,7 +866,7 @@ const SCENES = [
   {
     // Not a stop: a few fish around the island.
     stop: "sea",
-    items: [0, 1, 2, 3, 4, 5].map((k) => ({ m: k % 3 === 2 ? "clownfish" : "fish", w: 0.5, swim: k, anim: swim(k) })),
+    items: [0, 1, 2, 3, 4, 5].map((k) => ({ m: "fish", w: 0.5, clip: "Swim", swim: k, anim: swim(k) })),
   },
 ];
 

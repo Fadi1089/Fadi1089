@@ -13,6 +13,10 @@
     {"name": "sled", "id": "5m_sB-SX53W", "title": "Sled", "author": "Poly by Google", "licence": "CC-BY 3.0"},
     {"name": "mailbox", "id": "2olZ0G8iur", "title": "Mailbox", "author": "CreativeTrio", "licence": "CC0 1.0"},
     {"name": "bottle", "id": "NxbygmpVwR", "title": "Old Bottle", "author": "MiniPoly", "licence": "CC0 1.0"},
-    {"name": "plane", "id": "75WQH5E29tF", "title": "Paper airplane", "author": "Poly by Google", "licence": "CC-BY 3.0"}
+    {"name": "plane", "id": "75WQH5E29tF", "title": "Paper airplane", "author": "Poly by Google", "licence": "CC-BY 3.0"},
+    {"name": "chair", "id": "UfKvrZBK6C", "title": "Office Chair", "author": "Quaternius", "licence": "CC0 1.0"},
+    {"name": "cat", "id": "dYKICaHpK0c", "title": "Cat", "author": "Poly by Google", "licence": "CC-BY 3.0"},
+    {"name": "tree", "id": "eLqmfpqu_Ig", "title": "Tree Assets", "author": "Ben Desai", "licence": "CC-BY 3.0"},
+    {"name": "fish", "id": "BEcU9rjiAq", "title": "Fish", "author": "Quaternius", "licence": "CC0 1.0"}
   ]
 }
