@@ -562,6 +562,64 @@ function ttBoard() {
   return g;
 }
 
+// Léa Learn: a training request's journey as a path of six stepping stones,
+// one per step on lea-learn.ai (request, check, agreement, signature, joining
+// notice, closed), leading to a small training centre. Each stone has a flag;
+// a glowing request hops along the path and lights the flags it has passed.
+const LEA = { indigo: "#9c9af5", deep: "#4b4796", done: "#7fb35a", idle: "#5c5f73" };
+const JOURNEY = [[-1.6, 0.6], [-1.02, 0.36], [-0.44, 0.52], [0.12, 0.28], [0.64, 0.02], [1.08, -0.3]];
+function journey() {
+  const g = new THREE.Group(), stones = [], flags = [];
+  JOURNEY.forEach(([x, z], k) => {
+    g.add(box(0.36, 0.05, 0.36, "#efe6d2", x, 0, z));
+    g.add(cyl(0.018, 0.018, 0.4, DARKWOOD, x + 0.13, 0.05, z - 0.13, 6));
+    const last = k === JOURNEY.length - 1;
+    const m = new THREE.MeshStandardMaterial({ color: last ? LEA.done : LEA.indigo, emissive: last ? LEA.done : LEA.indigo, emissiveIntensity: 0, roughness: 0.6, flatShading: true });
+    const flag = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.11, 0.015).translate(0.08, 0, 0), m);
+    flag.position.set(x + 0.13, 0.38, z - 0.13);
+    flag.castShadow = true;
+    flag.userData.ownMat = true;
+    g.add(flag);
+    stones.push(new THREE.Vector3(x, 0.05, z));
+    flags.push(flag);
+  });
+  // The training centre at the end of the path, its roof in Léa Learn's indigo.
+  const hall = grp(box(0.95, 0.5, 0.7, "#efe4cc"), rot(cone(0.74, 0.36, LEA.deep, 0, 0.5, 0, 4), 0, Math.PI / 4), box(0.2, 0.3, 0.02, "#3a2a20", -0.1, 0, 0.355),
+    box(0.16, 0.12, 0.02, glow("#cfd0ff", "#8f8cf2"), 0.22, 0.24, 0.355));
+  hall.position.set(1.5, 0, -0.72);
+  hall.rotation.y = -0.35;
+  g.add(hall);
+  const token = mesh(new THREE.IcosahedronGeometry(0.075, 1), M("#d9d8ff", { emissive: "#9c9af5", emissiveIntensity: 1.2, flatShading: false }));
+  token.castShadow = true;
+  g.add(token);
+  g.userData = { stones, flags, token, dims: { w: 3.6, h: 1.0, d: 1.8 } };
+  return g;
+}
+// The request rests on a stone, hops to the next, and lights each flag it
+// reaches; after the last step all flags dim and it starts again.
+const animJourney = (it, t) => {
+  const d = it.content?.userData;
+  if (!d?.stones) return;
+  const { stones, flags, token } = d, n = stones.length, step = 0.9, cycle = n * step + 1.4;
+  const c = t % cycle, i = Math.min(n - 1, Math.floor(c / step)), f = c / step - i;
+  let reached = i;
+  if (i < n - 1 && f > 0.55) {
+    const u = (f - 0.55) / 0.45;
+    token.position.lerpVectors(stones[i], stones[i + 1], smooth(u));
+    token.position.y = stones[i].y + 0.12 + Math.sin(u * Math.PI) * 0.22;
+    if (u > 0.95) reached = i + 1;
+  } else {
+    token.position.copy(stones[i]);
+    token.position.y += 0.12 + Math.abs(Math.sin(t * 4)) * 0.02;
+  }
+  flags.forEach((fl, k) => {
+    const lit = k <= reached && c < n * step + 1.0;
+    fl.material.emissiveIntensity += ((lit ? 0.85 : 0) - fl.material.emissiveIntensity) * 0.2;
+    fl.material.color.set(lit ? (k === n - 1 ? LEA.done : LEA.indigo) : LEA.idle);
+    fl.rotation.y = Math.sin(t * 2 + k) * 0.25;
+  });
+};
+
 // Stepped layers, each set back from the one below, like a terrace cut.
 function strata() {
   const g = new THREE.Group();
@@ -840,6 +898,10 @@ const SCENES = [
       { m: "campfire", h: 0.22, at: [-0.85, -0.4], then: addFire, anim: animFire },
       { make: logSeat, at: [-0.85, 0.25], r: 1 },
     ],
+  },
+  {
+    stop: "lealearn", plot: [4, 2], tiles: [T.SAND, T.GRASS], base: T.GRASS,
+    items: [{ make: journey, at: [0, 0], anim: animJourney }],
   },
   {
     stop: "tristik", plot: [5, 3], tiles: [T.GRASS, T.VILLAGE, T.SAND, T.FOREST], base: T.GRASS,

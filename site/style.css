@@ -9,6 +9,7 @@
   --rock: #a09cab;
   --snow: #eef2f4;
   --village: #d8735a;
+  --lea: #9c9af5; /* Léa Learn's indigo, lifted to read on the dark panel */
   --ink: #eef1ea;
   --muted: #a8bcc0;
   --panel: rgba(9, 27, 38, 0.92);
@@ -227,6 +228,7 @@ main { position: relative; z-index: 2; }
   font-weight: 600;
 }
 .go:hover { color: var(--sea); background: var(--ink); }
+.links .note { font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
 
 
 .stacklist { display: grid; grid-template-columns: max-content 1fr; gap: 10px 18px; margin: 0 0 22px; }

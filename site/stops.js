@@ -12,6 +12,7 @@
 export const STOPS = {
   hero: { target: "center", az: 18, dist: 44, h: 31, shift: 17 },
   about: { target: "south", az: -25, dist: 8.5, h: 4.4, shift: 3.5, up: 0.2, mlift: 1.05 },
+  lealearn: { target: "east", az: 70, dist: 7.5, h: 4.6, shift: 3.5, up: 0.3 },
   tristik: { target: "village", az: 40, dist: 7.5, h: 5, shift: 3.5, up: 0.2 },
   cvie: { target: "forest", az: 115, dist: 6.5, h: 3.8, shift: 3.5, up: 0.5 },
   formio: { target: "north", az: 190, dist: 6.5, h: 3.6, shift: 3.5, up: 0.25 },
