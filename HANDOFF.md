@@ -1,11 +1,11 @@
 # Handoff: portfolio camera-stop scenes
 
-## Status (2026-11-26): done
+## Status (2026-11-27): done
 All eight scenes are built in `site/props.js` (camera stops shared in `site/stops.js`), with 23 models in `site/models/` and procedural fallbacks for each. Changes from the plan below:
 - Every scene stands on a **plot**: `planPlots()` picks a block of cells near the landmark, levels it to one height, retiles it (a forest clearing, a beach patch, a snow terrace), turns it to the grid side facing the camera, and keeps a one-cell border free of trees/houses/rocks. Items are laid out in plot units with quarter turns, so nothing hangs off a column edge or sits at a random angle.
 - Pages are grounded: the CV is a notice board. The contact beach has a jetty that starts at the waterline, flush with the sand.
-- Léa Learn (first card under Work, east beach): six stepping stones with flags for the six steps of a request on lea-learn.ai, a glowing request hopping along them, and a training centre with an indigo roof. The product is closed source; the card links to lea-learn.ai.
-- Formio is a big tablet showing the form (two questions with audio clips and choices) next to a bar chart that grows as the stop comes into view. Stack is four labelled strata (systems, back-end, front-end, 3D), each coloured like a terrain tile.
+- Léa Learn (first card under Work, east beach): a catalogue of twelve course tiles, each with a topic pictogram, and Léa as an orb on a pedestal. Her beam sweeps the tiles, picks one, lifts it and shows a green "funded" badge, then starts over. The card has a six-step widget (request to closed) that plays when it scrolls into view. The product is private; the card only links to lea-learn.ai, with no stack and no code.
+- Formio is a big tablet showing the form (two questions with audio clips and choices) next to a bar chart that grows as the stop comes into view. Stack is a stepped pyramid of four tiers (systems, back-end, front-end, games & 3D), each with a colour band and three blocks carrying line pictograms (`site/icons.js`); the blocks drop in and bob.
 - Island growth (`updateWorld` in `main.js`): the map fills in flat on the water in WFC order, then land rises and sea sinks from the centre out, then trees and houses grow; scenes appear only after that (`world.ready`).
 - `sea.js`: the seabed deepens with distance to land by one rule inside the grid and in a ring of columns beyond it (no square border); water tinted the same way; foam along the coast; sun glints. A few fish swim in the shallows (props.js, "sea" scene).
 - Hand-downloaded models (Poly Pizza only serves newer uploads to its own page): chair, cat, tree, fish, listed as MANUAL in `scripts/fetch_models.sh`. `tree.glb` is the "Tree Assets" pack: the island uses six single trees from it (`TREE_PIECES` in `main.js`), one variant per tree. The fish model is an animated clownfish.
@@ -13,6 +13,11 @@ All eight scenes are built in `site/props.js` (camera stops shared in `site/stop
 - On desktop each scene centres itself in the space right of its text panel (`stopParams` in `main.js` measures the panel); `up` raises the look point, `mlift` lifts the subject on phones.
 - The hero orbit unwinds when you scroll away, so scenes face the camera.
 - `MODEL_FIX` in `props.js` holds the turns that stand some models up / face them forward.
+- Day and night: the sun/moon button in the header (`site/ui.js`) toggles `html.night`; `applySky()` in `main.js` blends sea, fog, lights, water and clouds, brings out stars, lights the house windows and brightens the campfire. It follows the system setting until the reader picks one (saved in `localStorage.theme`).
+- Clouds are flat blocky slabs: a random blob of grid cells traced into one outline and extruded with a bevel (`cloudGeometry` in `main.js`).
+- Foam (`sea.js`): a soft bubbly band on every coastal edge, rounded pieces on outer corners, and a thin wave line that rolls outward; the timing drifts along the coast.
+- Page widgets in `site/ui.js`: Léa steps, copy-the-address button, magnetic buttons (fine pointers only), kickers that scramble in from tile glyphs. Header links have pictograms (SVG sprite in `index.html`) and a text roll on hover; phones show the icons only.
+- Cards have coloured corner brackets and a gradient tinted by each card's `--tile` colour.
 
 The original brief follows for reference.
 
@@ -63,4 +68,4 @@ Open http://localhost:8765, scroll through every stop on desktop and at 390 px w
 - Commit and push **directly to `main`** (owner's preference). The Pages workflow deploys on changes to `site/**`.
 - Keep replies short: result first, then next steps.
 - Copy is trilingual (`site/i18n.js`, FR/EN/DE). Any new visible text needs all three.
-- Palette: sea `#0d2433` ground, sand `#e2c983` accent, terrain colors in `TILE` in `main.js`. Fonts: Bricolage Grotesque (display), JetBrains Mono (labels).
+- Palette: sea `#0d2433` ground, sand `#e2c983` accent, terrain colors in `TILE` in `main.js`. Font: Bricolage Grotesque only; labels use its narrow width (`"wdth" 80`), semi-bold, uppercase. Night palette lives under `html.night` in `style.css`.

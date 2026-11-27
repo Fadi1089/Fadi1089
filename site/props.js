@@ -10,6 +10,8 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import * as SkeletonUtils from "three/addons/utils/SkeletonUtils.js";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
+import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
+import { drawIcon } from "./icons.js";
 import { T } from "./wfc.js";
 import { STOPS } from "./stops.js";
 import { waterY } from "./sea.js";
@@ -231,10 +233,10 @@ const FALLBACK = {
 /* ------------------------------------------------------------------ */
 
 const DISPLAY = '"Bricolage Grotesque", "Arial Narrow", sans-serif';
-const MONO = '"JetBrains Mono", Menlo, monospace';
-const fontsReady = document.fonts
-  ? Promise.all([document.fonts.load(`800 60px ${DISPLAY}`), document.fonts.load(`600 24px ${MONO}`)]).catch(() => {})
-  : Promise.resolve();
+const fontsReady = document.fonts ? document.fonts.load(`800 60px ${DISPLAY}`).catch(() => {}) : Promise.resolve();
+
+// How far into the night the island is (0 day, 1 night); set every frame.
+let night = 0;
 
 const textures = {};
 function canvasTex(key, w, h, draw) {
@@ -375,40 +377,20 @@ function formTexture() {
   });
 }
 
-// The stack as strata, bottom to top: systems, back-end, front-end, 3D.
-// Each layer is coloured like a terrain tile. Names are product names.
-const STRATA = [
-  ["LINUX · C · GIT", "#8f8b99", "#1d2230"],
-  ["NODE · PRISMA · POSTGRES", "#e2c983", INK],
-  ["REACT · NEXT.JS · TYPESCRIPT", "#7fb35a", INK],
-  ["THREE.JS · BLENDER · C#", "#eef2f4", INK],
-];
-const LAYER = { h: 0.3, w0: 2.3, d0: 1.5, dw: 0.3, dd: 0.25 };
-const LABEL_PX = 400; // canvas pixels per world unit, the same on every layer
-const strataMats = [];
-function strataMaterials(k) {
-  if (!strataMats[k]) {
-    const [label, bg, fg] = STRATA[k];
-    const lw = LAYER.w0 - k * LAYER.dw;
-    const W = Math.round(lw * LABEL_PX), H = Math.round(LAYER.h * LABEL_PX);
-    const tex = canvasTex("stratum" + k, W, H, (g, w, h) => {
-      g.fillStyle = bg;
-      g.fillRect(0, 0, w, h);
-      g.fillStyle = fg;
-      // One text size for every layer: the largest that fits the narrowest.
-      let size = h * 0.34;
-      g.font = `600 ${size}px ${MONO}`;
-      const fit = Math.min(...STRATA.map(([l], j) => ((LAYER.w0 - j * LAYER.dw) * LABEL_PX * 0.86) / g.measureText(l).width));
-      if (fit < 1) g.font = `600 ${(size *= fit)}px ${MONO}`;
-      g.textAlign = "center";
-      g.textBaseline = "middle";
-      g.fillText(label, w / 2, h / 2 + 2);
-    });
-    const side = M(bg);
-    const face = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.85 });
-    strataMats[k] = [side, side, side, side, face, side];
-  }
-  return strataMats[k];
+// A pictogram on a transparent canvas, for a plane laid on a block or tile.
+const iconMats = {};
+function iconMaterial(name, color) {
+  const k = name + color;
+  iconMats[k] ??= new THREE.MeshBasicMaterial({
+    map: canvasTex("icon-" + k, 128, 128, (g, w) => {
+      g.clearRect(0, 0, w, w);
+      g.strokeStyle = g.fillStyle = color;
+      drawIcon(g, name, 16, 16, 96, 2.1, DISPLAY);
+    }),
+    transparent: true,
+    depthWrite: false,
+  });
+  return iconMats[k];
 }
 
 const pageMats = {};
@@ -429,6 +411,158 @@ function page(key, tex, w, h, tilt = -0.1) {
 /* ------------------------------------------------------------------ */
 /* Procedural pieces                                                   */
 /* ------------------------------------------------------------------ */
+
+// Léa Learn: "describe the need, Léa finds the course and its funding". The
+// catalogue is a grid of course tiles, each with a topic pictogram. Léa is an
+// indigo orb on a pedestal; its beam sweeps the catalogue, settles on one
+// course, the tile rises and a green "funded" badge pops above it.
+const LEA = { indigo: "#8f8cf2", deep: "#3d3a8a", stone: "#d7d3e3", tile: "#f3f1ea", funded: "#7fb35a" };
+const COURSES = ["sheet", "people", "chat", "shield", "euro", "chart", "bolt", "laptop", "aid", "megaphone", "scale", "gear"];
+let roundTile = null, roundCube = null;
+function leaCatalogue() {
+  roundTile ??= new RoundedBoxGeometry(0.52, 0.08, 0.4, 2, 0.03);
+  const g = new THREE.Group(), tiles = [];
+  const iconGeo = new THREE.PlaneGeometry(0.28, 0.28).rotateX(-Math.PI / 2);
+  COURSES.forEach((name, k) => {
+    const col = k % 4, row = Math.floor(k / 4);
+    const t = new THREE.Group();
+    t.position.set(-1.55 + col * 0.64, 0, -0.6 + row * 0.56);
+    const slab = new THREE.Mesh(roundTile, M(LEA.tile, { flatShading: false }));
+    slab.position.y = 0.04;
+    slab.castShadow = slab.receiveShadow = true;
+    const icon = new THREE.Mesh(iconGeo, iconMaterial(name, "#4b4796"));
+    icon.position.y = 0.083;
+    icon.renderOrder = 1;
+    t.add(slab, icon);
+    g.add(t);
+    tiles.push(t);
+  });
+  // A soft indigo glow under the chosen tile.
+  const glowMat = new THREE.MeshBasicMaterial({ color: LEA.indigo, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false });
+  const glowPad = new THREE.Mesh(new THREE.PlaneGeometry(0.72, 0.58).rotateX(-Math.PI / 2), glowMat);
+  glowPad.position.y = 0.01;
+  glowPad.userData.ownMat = true;
+  g.add(glowPad);
+  // Léa: an orb above a pedestal, and the beam it searches with.
+  const pedestal = grp(cyl(0.24, 0.3, 0.12, LEA.stone, 0, 0, 0, 16), cyl(0.15, 0.2, 0.32, LEA.stone, 0, 0.12, 0, 16), cyl(0.22, 0.17, 0.05, LEA.deep, 0, 0.44, 0, 16));
+  pedestal.position.set(1.35, 0, -0.05);
+  const orbMat = new THREE.MeshStandardMaterial({ color: "#c9c7ff", emissive: LEA.indigo, emissiveIntensity: 1, roughness: 0.25 });
+  const orb = new THREE.Mesh(new THREE.IcosahedronGeometry(0.2, 3), orbMat);
+  orb.userData.ownMat = true;
+  orb.castShadow = true;
+  orb.position.set(1.35, 1.0, -0.05);
+  const halo = new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.012, 6, 48), new THREE.MeshBasicMaterial({ color: LEA.indigo, transparent: true, opacity: 0.6 }));
+  halo.userData.ownMat = true;
+  halo.position.copy(orb.position);
+  const beamMat = new THREE.MeshBasicMaterial({ color: LEA.indigo, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
+  const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.13, 1, 16, 1, true).translate(0, -0.5, 0), beamMat);
+  beam.userData.ownMat = true;
+  beam.position.copy(orb.position);
+  const light = new THREE.PointLight(LEA.indigo, 0, 3, 1.6);
+  light.position.copy(orb.position);
+  // The "funded" badge: a green coin with a tick, always facing the camera.
+  const badge = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: canvasTex("funded", 128, 128, (c, w) => {
+      c.clearRect(0, 0, w, w);
+      c.fillStyle = LEA.funded;
+      c.beginPath();
+      c.arc(64, 64, 58, 0, Math.PI * 2);
+      c.fill();
+      c.strokeStyle = "#ffffff";
+      drawIcon(c, "check", 22, 22, 84, 3);
+    }),
+    depthWrite: false,
+  }));
+  badge.scale.setScalar(0.001);
+  g.add(pedestal, orb, halo, beam, light, badge);
+  g.userData = { tiles, orb, orbMat, halo, beam, beamMat, glowPad, glowMat, badge, light, dims: { w: 3.6, h: 1.2, d: 1.6 } };
+  return g;
+}
+const _to = new THREE.Vector3(), _dir = new THREE.Vector3(), _up = new THREE.Vector3(0, 1, 0);
+const animLea = (it, t) => {
+  const d = it.content?.userData;
+  if (!d?.tiles) return;
+  const { tiles, orb, orbMat, halo, beam, beamMat, glowPad, glowMat, badge, light } = d;
+  const cycle = 5.2, c = t % cycle, round = Math.floor(t / cycle);
+  const pick = (round * 7 + 5) % tiles.length;
+  // Orb: breathes, the halo turns.
+  const pulse = 0.5 + 0.5 * Math.sin(t * 2.4);
+  orb.position.y = 1.0 + Math.sin(t * 1.3) * 0.04;
+  orb.scale.setScalar(1 + pulse * 0.06);
+  orbMat.emissiveIntensity = 0.8 + pulse * 0.5 + night * 0.8;
+  halo.position.y = orb.position.y;
+  halo.rotation.set(Math.PI / 2 + Math.sin(t * 0.7) * 0.4, t * 0.9, 0);
+  light.intensity = (0.4 + pulse * 0.3) * (0.3 + night * 1.6);
+  // Beam: sweeps the grid, then settles on the chosen course.
+  let lift = 0;
+  if (c < 2.6) {
+    const u = c / 2.6;
+    _to.set(-1.55 + (Math.sin(u * Math.PI * 2.2) * 0.5 + 0.5) * 1.92, 0.1, -0.6 + (Math.sin(u * Math.PI * 1.3 + 1) * 0.5 + 0.5) * 1.12);
+    beamMat.opacity = 0.09 + 0.03 * Math.sin(t * 9);
+  } else {
+    const target = tiles[pick].position;
+    const s2 = Math.min(1, (c - 2.6) / 0.35);
+    _to.set(target.x, 0.1, target.z);
+    lift = c < 4.6 ? smooth((c - 2.6) / 0.35) : 1 - smooth((c - 4.6) / 0.5);
+    beamMat.opacity = (0.16 + 0.04 * Math.sin(t * 9)) * (c < 4.6 ? s2 : 1 - smooth((c - 4.6) / 0.5));
+  }
+  _dir.subVectors(_to, orb.position);
+  beam.position.copy(orb.position);
+  beam.scale.set(1, _dir.length(), 1);
+  beam.quaternion.setFromUnitVectors(_up, _dir.clone().negate().normalize());
+  tiles.forEach((tile, k) => { tile.position.y = k === pick ? lift * 0.22 : 0; });
+  glowPad.position.set(tiles[pick].position.x, 0.01, tiles[pick].position.z);
+  glowMat.opacity = lift * (0.55 + night * 0.3);
+  const b = c < 2.95 ? 0 : c < 4.7 ? easeBack(Math.min(1, (c - 2.95) / 0.35)) : Math.max(0, 1 - (c - 4.7) * 4);
+  badge.scale.setScalar(Math.max(0.001, b * 0.36));
+  badge.position.set(tiles[pick].position.x, 0.62 + Math.sin(t * 3) * 0.02, tiles[pick].position.z);
+};
+
+// Stack: four terraces cut into the rock, bottom to top systems, back end,
+// front end and 3D. Each has a colour band and three pictogram blocks.
+const TIERS = [
+  { color: "#c9a548", ink: "#7d5f12", icons: ["terminal", "c", "branch"] },
+  { color: "#3a8fa6", ink: "#1f6278", icons: ["hexagon", "database", "prism"] },
+  { color: "#7fb35a", ink: "#3f7a2c", icons: ["atom", "ts", "browser"] },
+  { color: "#d8735a", ink: "#a2442c", icons: ["cube", "orbit", "gamepad"] },
+];
+function stackTerraces() {
+  roundCube ??= new RoundedBoxGeometry(0.34, 0.34, 0.34, 3, 0.05);
+  const g = new THREE.Group(), cubes = [];
+  const h = 0.22, iconGeo = new THREE.PlaneGeometry(0.26, 0.26);
+  TIERS.forEach((tier, k) => {
+    const w = 2.7 - k * 0.52, d = 2.4 - k * 0.5, y = k * h, front = d / 2 - 0.3;
+    g.add(box(w, h, d, "#8d8999", 0, y, -k * 0.06));
+    g.add(box(w + 0.004, 0.05, 0.02, tier.color, 0, y + h - 0.05, d / 2 - k * 0.06 + 0.002));
+    tier.icons.forEach((name, j) => {
+      const c = new THREE.Group();
+      c.position.set((j - 1) * 0.46 * (1 - k * 0.12), y + h, front - k * 0.06);
+      const block = new THREE.Mesh(roundCube, M("#f2efe8", { flatShading: false }));
+      block.position.y = 0.17;
+      block.castShadow = block.receiveShadow = true;
+      const icon = new THREE.Mesh(iconGeo, iconMaterial(name, tier.ink));
+      icon.position.set(0, 0.17, 0.172);
+      c.add(block, icon);
+      c.userData = { y: c.position.y, k, j };
+      g.add(c);
+      cubes.push(c);
+    });
+  });
+  g.userData = { cubes, dims: { w: 2.7, h: 1.3, d: 2.4 } };
+  return g;
+}
+// Blocks drop onto their terrace one after another, then float a little.
+const animStack = (it, t) => {
+  const cubes = it.content?.userData.cubes;
+  if (!cubes) return;
+  cubes.forEach((c, n) => {
+    const { y, k, j } = c.userData;
+    const p = clamp01((t - n * 0.09) / 0.55);
+    c.visible = p > 0;
+    c.position.y = y + (1 - bounce(p)) * 2.2 + (p >= 1 ? Math.sin(t * 1.6 + k + j * 1.7) * 0.015 : 0);
+    c.rotation.y = p >= 1 ? Math.sin(t * 0.8 + n) * 0.06 : 0;
+  });
+};
 
 // TrisTik board, in the game's own look: a cream board with a wooden fence,
 // filled with one-biome tetrominoes, and a last piece that turns and drops
@@ -562,79 +696,6 @@ function ttBoard() {
   return g;
 }
 
-// Léa Learn: a training request's journey as a path of six stepping stones,
-// one per step on lea-learn.ai (request, check, agreement, signature, joining
-// notice, closed), leading to a small training centre. Each stone has a flag;
-// a glowing request hops along the path and lights the flags it has passed.
-const LEA = { indigo: "#9c9af5", deep: "#4b4796", done: "#7fb35a", idle: "#5c5f73" };
-const JOURNEY = [[-1.6, 0.6], [-1.02, 0.36], [-0.44, 0.52], [0.12, 0.28], [0.64, 0.02], [1.08, -0.3]];
-function journey() {
-  const g = new THREE.Group(), stones = [], flags = [];
-  JOURNEY.forEach(([x, z], k) => {
-    g.add(box(0.36, 0.05, 0.36, "#efe6d2", x, 0, z));
-    g.add(cyl(0.018, 0.018, 0.4, DARKWOOD, x + 0.13, 0.05, z - 0.13, 6));
-    const last = k === JOURNEY.length - 1;
-    const m = new THREE.MeshStandardMaterial({ color: last ? LEA.done : LEA.indigo, emissive: last ? LEA.done : LEA.indigo, emissiveIntensity: 0, roughness: 0.6, flatShading: true });
-    const flag = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.11, 0.015).translate(0.08, 0, 0), m);
-    flag.position.set(x + 0.13, 0.38, z - 0.13);
-    flag.castShadow = true;
-    flag.userData.ownMat = true;
-    g.add(flag);
-    stones.push(new THREE.Vector3(x, 0.05, z));
-    flags.push(flag);
-  });
-  // The training centre at the end of the path, its roof in Léa Learn's indigo.
-  const hall = grp(box(0.95, 0.5, 0.7, "#efe4cc"), rot(cone(0.74, 0.36, LEA.deep, 0, 0.5, 0, 4), 0, Math.PI / 4), box(0.2, 0.3, 0.02, "#3a2a20", -0.1, 0, 0.355),
-    box(0.16, 0.12, 0.02, glow("#cfd0ff", "#8f8cf2"), 0.22, 0.24, 0.355));
-  hall.position.set(1.5, 0, -0.72);
-  hall.rotation.y = -0.35;
-  g.add(hall);
-  const token = mesh(new THREE.IcosahedronGeometry(0.075, 1), M("#d9d8ff", { emissive: "#9c9af5", emissiveIntensity: 1.2, flatShading: false }));
-  token.castShadow = true;
-  g.add(token);
-  g.userData = { stones, flags, token, dims: { w: 3.6, h: 1.0, d: 1.8 } };
-  return g;
-}
-// The request rests on a stone, hops to the next, and lights each flag it
-// reaches; after the last step all flags dim and it starts again.
-const animJourney = (it, t) => {
-  const d = it.content?.userData;
-  if (!d?.stones) return;
-  const { stones, flags, token } = d, n = stones.length, step = 0.9, cycle = n * step + 1.4;
-  const c = t % cycle, i = Math.min(n - 1, Math.floor(c / step)), f = c / step - i;
-  let reached = i;
-  if (i < n - 1 && f > 0.55) {
-    const u = (f - 0.55) / 0.45;
-    token.position.lerpVectors(stones[i], stones[i + 1], smooth(u));
-    token.position.y = stones[i].y + 0.12 + Math.sin(u * Math.PI) * 0.22;
-    if (u > 0.95) reached = i + 1;
-  } else {
-    token.position.copy(stones[i]);
-    token.position.y += 0.12 + Math.abs(Math.sin(t * 4)) * 0.02;
-  }
-  flags.forEach((fl, k) => {
-    const lit = k <= reached && c < n * step + 1.0;
-    fl.material.emissiveIntensity += ((lit ? 0.85 : 0) - fl.material.emissiveIntensity) * 0.2;
-    fl.material.color.set(lit ? (k === n - 1 ? LEA.done : LEA.indigo) : LEA.idle);
-    fl.rotation.y = Math.sin(t * 2 + k) * 0.25;
-  });
-};
-
-// Stepped layers, each set back from the one below, like a terrace cut.
-function strata() {
-  const g = new THREE.Group();
-  STRATA.forEach((_, k) => {
-    const w = LAYER.w0 - k * LAYER.dw, d = LAYER.d0 - k * LAYER.dd;
-    const m = new THREE.Mesh(new THREE.BoxGeometry(w, LAYER.h, d).translate(0, LAYER.h / 2, 0), strataMaterials(k));
-    m.position.y = k * LAYER.h;
-    m.castShadow = m.receiveShadow = true;
-    m.userData.y = m.position.y;
-    g.add(m);
-  });
-  g.userData.dims = { w: LAYER.w0, h: LAYER.h * STRATA.length, d: LAYER.d0 };
-  return g;
-}
-
 // A notice board: two posts holding a page, standing on the ground.
 function signBoard(key, tex, w, h, lift) {
   const p = page(key, tex, w, h, 0);
@@ -765,7 +826,7 @@ function animFire(it, t) {
     f.scale.set(f.userData.s, f.userData.s * (1 + n * 0.25), f.userData.s);
     f.rotation.y = t * (1 + k * 0.3);
   });
-  light.intensity = 2.6 + Math.sin(t * 11) * 0.5 + Math.sin(t * 4.7) * 0.4;
+  light.intensity = (2.6 + Math.sin(t * 11) * 0.5 + Math.sin(t * 4.7) * 0.4) * (1 + night * 1.4);
 }
 
 /* ------------------------------------------------------------------ */
@@ -865,17 +926,6 @@ const bobBottle = (it, t) => {
 
 const sway = (it, t) => { it.pivot.rotation.z = Math.sin(t * 1.6) * 0.03; };
 
-const blocks = (it, t) => {
-  const g = it.content;
-  if (!g) return;
-  g.children.forEach((b, k) => {
-    const p = clamp01((t - k * 0.16) / 0.6);
-    b.visible = p > 0;
-    b.position.y = b.userData.y + (1 - bounce(p)) * 3.5;
-  });
-  g.rotation.z = Math.sin(t * 0.8) * 0.012;
-};
-
 /* ------------------------------------------------------------------ */
 /* Scenes                                                              */
 /* ------------------------------------------------------------------ */
@@ -900,8 +950,8 @@ const SCENES = [
     ],
   },
   {
-    stop: "lealearn", plot: [4, 2], tiles: [T.SAND, T.GRASS], base: T.GRASS,
-    items: [{ make: journey, at: [0, 0], anim: animJourney }],
+    stop: "lealearn", plot: [4, 3], tiles: [T.SAND, T.GRASS, T.FOREST], base: T.GRASS,
+    items: [{ make: leaCatalogue, at: [0, 0], anim: animLea }],
   },
   {
     stop: "tristik", plot: [5, 3], tiles: [T.GRASS, T.VILLAGE, T.SAND, T.FOREST], base: T.GRASS,
@@ -939,7 +989,7 @@ const SCENES = [
   {
     stop: "stack", plot: [3, 3], tiles: [T.ROCK, T.SNOW, T.GRASS], base: T.ROCK,
     items: [
-      { make: strata, at: [0, -0.1], noPop: true, anim: blocks },
+      { make: stackTerraces, at: [0, -0.05], noPop: true, anim: animStack },
     ],
   },
   {
@@ -1029,6 +1079,7 @@ function buildWfc(world, tileColors) {
 
   // Grid and trail cover the island and its shallows, not the open sea.
   const isle = (i) => g.tiles[i] !== T.DEEP;
+  const isleOrder = g.order.filter(isle); // the trail runs over these, in collapse order
   const pos = new Float32Array(N * 24);
   for (let i = 0, p = 0; i < N; i++) {
     if (!isle(i)) continue;
@@ -1047,12 +1098,15 @@ function buildWfc(world, tileColors) {
   group.add(lines);
 
   const quad = new THREE.PlaneGeometry(0.92, 0.92).rotateX(-Math.PI / 2);
-  const trail = new THREE.InstancedMesh(quad, new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false }), N);
+  // The collapse trail: each cell it reaches flashes as a solid coloured
+  // square that shrinks away. Hue shifts along the trail and over time.
+  const trail = new THREE.InstancedMesh(quad, new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false, toneMapped: false }), N);
   trail.userData.own = trail.userData.ownMat = true;
+  trail.frustumCulled = false; // instances start at zero size
   const m4 = new THREE.Matrix4();
   const black = new THREE.Color(0, 0, 0);
   for (let i = 0; i < N; i++) {
-    trail.setMatrixAt(i, m4.makeTranslation(cx(i), top(i) + 0.01, cz(i)));
+    trail.setMatrixAt(i, m4.makeScale(0, 0, 0));
     trail.setColorAt(i, black);
   }
   group.add(trail);
@@ -1069,7 +1123,7 @@ function buildWfc(world, tileColors) {
   });
   group.add(cubes);
 
-  const sand = new THREE.Color("#ffd98a");
+  // The trail cycles through hues along its length and over time.
   const col = new THREE.Color();
   let lit = [];
   return {
@@ -1078,7 +1132,7 @@ function buildWfc(world, tileColors) {
       group.visible = w > 0.01;
       if (!group.visible) return;
       lines.material.opacity = 0.5 * w;
-      trail.material.opacity = w;
+      trail.material.opacity = 0.9 * w;
       const s = Math.max(0.001, smooth(w * 1.4 - 0.3));
       cubes.children.forEach((c, k) => {
         c.scale.setScalar(s);
@@ -1086,17 +1140,19 @@ function buildWfc(world, tileColors) {
       });
       if (!reduceMotion) cubes.rotation.y = now * 0.08;
       if (reduceMotion) return;
-      for (const i of lit) trail.setColorAt(i, black);
+      for (const i of lit) trail.setMatrixAt(i, m4.makeScale(0, 0, 0));
       lit = [];
-      const len = 240, head = (now * 360) % (N + len);
-      for (let k = Math.max(0, Math.floor(head - len)); k < Math.min(N, head); k++) {
+      const n = isleOrder.length, len = 260, head = (now * 240) % (n + len);
+      for (let k = Math.max(0, Math.floor(head - len)); k < Math.min(n, head); k++) {
         const f = 1 - (head - k) / len;
-        const cell = g.order[k];
-        if (!isle(cell)) continue;
-        trail.setColorAt(cell, col.copy(sand).multiplyScalar(f * f * 1.4));
+        const cell = isleOrder[k];
+        trail.setColorAt(cell, col.setHSL((k / 300 + now * 0.07) % 1, 1, 0.55));
+        const sz = f ** 1.5;
+        trail.setMatrixAt(cell, m4.makeScale(sz, 1, sz).setPosition(cx(cell), top(cell) + 0.01, cz(cell)));
         lit.push(cell);
       }
       trail.instanceColor.needsUpdate = true;
+      trail.instanceMatrix.needsUpdate = true;
     },
   };
 }
@@ -1179,7 +1235,8 @@ export function createScenes(world, ctx) {
   return {
     root,
     items,
-    update(now, dt, weights) {
+    update(now, dt, weights, nightT = 0) {
+      night = nightT;
       for (const it of items) {
         if (it.readyAt === Infinity) continue;
         const start = Math.max(it.delay, it.readyAt);

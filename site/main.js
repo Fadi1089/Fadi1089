@@ -4,6 +4,8 @@ import { I18N } from "./i18n.js";
 import { STOPS } from "./stops.js";
 import { createScenes, planPlots, loadManifest, loadModelParts } from "./props.js";
 import { createSea, shapeSeabed, waterY } from "./sea.js";
+import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
+import { initUI, initTheme, refreshUI } from "./ui.js";
 
 /* ------------------------------------------------------------------ */
 /* Language                                                            */
@@ -30,6 +32,7 @@ function tr(key, vars = {}) {
   return s;
 }
 function applyLang() {
+  refreshUI();
   document.documentElement.lang = lang;
   document.title = tr("meta.title");
   document.querySelectorAll("[data-i18n]").forEach((el) => { el.innerHTML = tr(el.dataset.i18n); });
@@ -39,6 +42,7 @@ function applyLang() {
 document.querySelectorAll(".langs button").forEach((b) =>
   b.addEventListener("click", () => { lang = b.dataset.lang; store.set("lang", lang); applyLang(); })
 );
+initUI(tr);
 applyLang();
 
 const statEl = document.getElementById("genstat");
@@ -71,12 +75,13 @@ renderer.toneMappingExposure = 1.05;
 
 const SEA = new THREE.Color("#0d2433");
 const scene = new THREE.Scene();
-scene.background = SEA;
-scene.fog = new THREE.Fog(SEA, 55, 140);
+scene.background = SEA.clone();
+scene.fog = new THREE.Fog(SEA.clone(), 55, 140);
 
 const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 400);
 
-scene.add(new THREE.HemisphereLight("#d6ecff", "#1a3646", 1.25));
+const hemi = new THREE.HemisphereLight("#d6ecff", "#1a3646", 1.25);
+scene.add(hemi);
 const sun = new THREE.DirectionalLight("#ffe0b0", 2.6);
 sun.position.set(-26, 38, 18);
 sun.castShadow = true;
@@ -137,6 +142,11 @@ const boxGeo = new THREE.BoxGeometry(1, 1, 1).translate(0, 0.5, 0);
 const treeGeo = new THREE.ConeGeometry(0.3, 0.95, 6).translate(0, 0.475, 0);
 const trunkGeo = new THREE.CylinderGeometry(0.06, 0.08, 0.3, 5).translate(0, 0.15, 0);
 const wallGeo = new THREE.BoxGeometry(0.56, 0.38, 0.44).translate(0, 0.19, 0);
+// Windows: thin boxes that poke out of the walls on all four sides.
+const windowGeo = mergeGeometries([
+  new THREE.BoxGeometry(0.13, 0.11, 0.452).translate(0.12, 0.21, 0),
+  new THREE.BoxGeometry(0.572, 0.11, 0.11).translate(0, 0.21, 0.02),
+]);
 const roofGeo = new THREE.ConeGeometry(0.46, 0.34, 4).rotateY(Math.PI / 4).scale(1, 1, 0.82).translate(0, 0.38 + 0.17, 0);
 const rockGeo = new THREE.DodecahedronGeometry(0.28, 0);
 
@@ -147,6 +157,7 @@ const mat = {
   wall: new THREE.MeshStandardMaterial({ color: "#efe4cc", roughness: 0.85 }),
   roof: new THREE.MeshStandardMaterial({ color: "#c45a3f", roughness: 0.7, flatShading: true }),
   rock: new THREE.MeshStandardMaterial({ color: "#77737f", roughness: 1, flatShading: true }),
+  window: new THREE.MeshStandardMaterial({ color: "#3b3a3f", emissive: "#ffc46b", emissiveIntensity: 0, roughness: 0.4 }),
 };
 
 let world = null;
@@ -193,7 +204,7 @@ function buildWorld(seed) {
   shapeSeabed(g, heights, cols);
 
   // Props: trees, houses and rocks, each tied to the cell it stands on.
-  const props = { tree: [], trunk: [], wall: [], roof: [], rock: [] };
+  const props = { tree: [], trunk: [], wall: [], roof: [], window: [], rock: [] };
   const add = (kind, cell, x, z, s, rot) => { if (!plan.clear.has(cell)) props[kind].push({ cell, x, z, s, rot }); };
   for (let i = 0; i < N; i++) {
     const t = g.tiles[i];
@@ -213,6 +224,7 @@ function buildWorld(seed) {
       const rot = Math.floor(r() * 4) * (Math.PI / 2) + (r() - 0.5) * 0.3;
       add("wall", i, x, z, s, rot);
       add("roof", i, x, z, s, rot);
+      add("window", i, x, z, s, rot);
     } else if ((t === T.ROCK && r() < 0.35) || (t === T.SAND && r() < 0.03)) {
       const [x, z] = spot();
       add("rock", i, x, z, 0.6 + r() * 0.8, r() * 6.3);
@@ -229,7 +241,7 @@ function buildWorld(seed) {
         const mine = list.filter((p, k) => (p.cell * 7 + k) % treeParts.length === vi);
         for (const p of variant) parts.push([p.geometry, p.material, mine]);
       });
-    } else parts.push([{ tree: treeGeo, trunk: trunkGeo, wall: wallGeo, roof: roofGeo, rock: rockGeo }[kind], mat[kind], list]);
+    } else parts.push([{ tree: treeGeo, trunk: trunkGeo, wall: wallGeo, roof: roofGeo, window: windowGeo, rock: rockGeo }[kind], mat[kind], list]);
   }
   const propMeshes = parts.map(([geo, material, list]) => {
     const m = new THREE.InstancedMesh(geo, material, Math.max(1, list.length));
@@ -366,27 +378,127 @@ function findLandmarks(g, heights) {
 /* Clouds                                                              */
 /* ------------------------------------------------------------------ */
 
+// Flat, blocky clouds: each one is a blob of grid cells, traced into a single
+// outline and extruded with a bevel, so the edges are rounded off.
 const clouds = new THREE.Group();
+const cloudMat = new THREE.MeshStandardMaterial({ color: "#ffffff", roughness: 0.95, transparent: true, opacity: 0.92 });
+function cloudGeometry(r) {
+  const key = (x, z) => x + "," + z;
+  const cells = new Set([key(0, 0)]);
+  const list = [[0, 0]];
+  const size = 5 + Math.floor(r() * 12);
+  while (cells.size < size) {
+    const [x, z] = list[Math.floor(r() * list.length)];
+    const [dx, dz] = r() < 0.65 ? [r() < 0.5 ? 1 : -1, 0] : [0, r() < 0.5 ? 1 : -1]; // longer than deep
+    if (!cells.has(key(x + dx, z + dz))) { cells.add(key(x + dx, z + dz)); list.push([x + dx, z + dz]); }
+  }
+  // Fill holes and diagonal pinches, so the outline is one simple loop.
+  let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+  for (const [x, z] of list) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z); }
+  const outside = new Set(), stack = [[x0 - 1, z0 - 1]];
+  while (stack.length) {
+    const [x, z] = stack.pop();
+    const k = key(x, z);
+    if (x < x0 - 1 || x > x1 + 1 || z < z0 - 1 || z > z1 + 1 || outside.has(k) || cells.has(k)) continue;
+    outside.add(k);
+    stack.push([x + 1, z], [x - 1, z], [x, z + 1], [x, z - 1]);
+  }
+  for (let x = x0; x <= x1; x++) for (let z = z0; z <= z1; z++) if (!outside.has(key(x, z))) cells.add(key(x, z));
+  for (let again = true; again;) {
+    again = false;
+    for (let x = x0 - 1; x <= x1; x++)
+      for (let z = z0 - 1; z <= z1; z++) {
+        const a = cells.has(key(x, z)), b = cells.has(key(x + 1, z)), c = cells.has(key(x, z + 1)), d = cells.has(key(x + 1, z + 1));
+        if (a && d && !b && !c) { cells.add(key(x + 1, z)); again = true; }
+        if (b && c && !a && !d) { cells.add(key(x, z)); again = true; }
+      }
+  }
+  // Boundary edges, each running with the cloud on its left; chain them.
+  const next = new Map();
+  for (const k of cells) {
+    const [x, z] = k.split(",").map(Number);
+    if (!cells.has(key(x, z - 1))) next.set(key(x, z), [x + 1, z]);
+    if (!cells.has(key(x + 1, z))) next.set(key(x + 1, z), [x + 1, z + 1]);
+    if (!cells.has(key(x, z + 1))) next.set(key(x + 1, z + 1), [x, z + 1]);
+    if (!cells.has(key(x - 1, z))) next.set(key(x, z + 1), [x, z]);
+  }
+  const start = next.keys().next().value;
+  const pts = [];
+  let at = start;
+  do {
+    const [x, z] = at.split(",").map(Number);
+    pts.push([x, z]);
+    const n = next.get(at);
+    at = key(n[0], n[1]);
+  } while (at !== start && pts.length < 400);
+  // Keep the corners only.
+  const corners = pts.filter((p, i) => {
+    const a = pts[(i + pts.length - 1) % pts.length], b = pts[(i + 1) % pts.length];
+    return (p[0] - a[0]) * (b[1] - p[1]) - (p[1] - a[1]) * (b[0] - p[0]) !== 0;
+  });
+  const CELL = 1.6, cx = (x0 + x1 + 1) / 2, cz = (z0 + z1 + 1) / 2;
+  const shape = new THREE.Shape(corners.map(([x, z]) => new THREE.Vector2((x - cx) * CELL, (z - cz) * CELL)));
+  const geo = new THREE.ExtrudeGeometry(shape, { depth: 0.5, bevelEnabled: true, bevelThickness: 0.2, bevelSize: 0.22, bevelSegments: 3, curveSegments: 1 });
+  geo.rotateX(Math.PI / 2);
+  return geo;
+}
 {
   const r = rng(7);
-  const puff = new THREE.IcosahedronGeometry(1, 0);
-  const cm = new THREE.MeshStandardMaterial({ color: "#ffffff", roughness: 1, flatShading: true, transparent: true, opacity: 0.93 });
-  for (let c = 0; c < 9; c++) {
-    const cl = new THREE.Group();
-    const n = 3 + Math.floor(r() * 4);
-    for (let k = 0; k < n; k++) {
-      const p = new THREE.Mesh(puff, cm);
-      p.position.set(k * 1.1 - n * 0.5 + r() * 0.4, r() * 0.5, (r() - 0.5) * 1.2);
-      const s = 0.8 + r() * 0.9;
-      p.scale.set(s * 1.3, s * 0.65, s);
-      p.castShadow = true;
-      cl.add(p);
-    }
-    cl.position.set((r() - 0.5) * 90, 10 + r() * 4, -42 + r() * 40);
+  for (let c = 0; c < 11; c++) {
+    const cl = new THREE.Mesh(cloudGeometry(r), cloudMat);
+    cl.castShadow = true;
+    cl.position.set((r() - 0.5) * 100, 11 + r() * 4, -44 + r() * 44);
     cl.userData.speed = 0.35 + r() * 0.5;
     clouds.add(cl);
   }
   scene.add(clouds);
+}
+
+/* ------------------------------------------------------------------ */
+/* Day and night                                                       */
+/* ------------------------------------------------------------------ */
+
+// Stars, out only at night.
+const stars = (() => {
+  const r = rng(99), n = 700, pos = new Float32Array(n * 3);
+  for (let k = 0; k < n; k++) {
+    const a = r() * Math.PI * 2, y = 0.08 + r() * 0.92, rad = Math.sqrt(1 - y * y);
+    pos.set([Math.cos(a) * rad * 170, y * 170, Math.sin(a) * rad * 170], k * 3);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+  const p = new THREE.Points(g, new THREE.PointsMaterial({ color: "#dfe6ff", size: 1.6, sizeAttenuation: false, transparent: true, opacity: 0, fog: false, depthWrite: false }));
+  scene.add(p);
+  return p;
+})();
+
+// Every lit value at day (0) and night (1); the scene blends between them.
+const DAY = {
+  sea: new THREE.Color("#0d2433"), floor: new THREE.Color("#0a1d29"),
+  sky: new THREE.Color("#d6ecff"), ground: new THREE.Color("#1a3646"), hemi: 1.25,
+  sun: new THREE.Color("#ffe0b0"), sunI: 2.6, water: new THREE.Color("#ffffff"), cloud: new THREE.Color("#ffffff"),
+};
+const NIGHT = {
+  sea: new THREE.Color("#050b14"), floor: new THREE.Color("#02060b"),
+  sky: new THREE.Color("#5869a3"), ground: new THREE.Color("#070d18"), hemi: 0.6,
+  sun: new THREE.Color("#9fb3ff"), sunI: 0.8, water: new THREE.Color("#5b6d96"), cloud: new THREE.Color("#5f6b88"),
+};
+const sky = { t: 0, target: 0 };
+const tmpC = new THREE.Color();
+function applySky(t) {
+  const mix = (a, b) => tmpC.copy(a).lerp(b, t);
+  scene.background.copy(mix(DAY.sea, NIGHT.sea));
+  scene.fog.color.copy(scene.background);
+  floor.material.color.copy(mix(DAY.floor, NIGHT.floor));
+  hemi.color.copy(mix(DAY.sky, NIGHT.sky));
+  hemi.groundColor.copy(mix(DAY.ground, NIGHT.ground));
+  hemi.intensity = DAY.hemi + (NIGHT.hemi - DAY.hemi) * t;
+  sun.color.copy(mix(DAY.sun, NIGHT.sun));
+  sun.intensity = DAY.sunI + (NIGHT.sunI - DAY.sunI) * t;
+  water.material.color.copy(mix(DAY.water, NIGHT.water));
+  cloudMat.color.copy(mix(DAY.cloud, NIGHT.cloud));
+  stars.material.opacity = t * t;
+  mat.window.emissiveIntensity = Math.max(0, t * 1.6 - 0.2);
 }
 
 /* ------------------------------------------------------------------ */
@@ -593,6 +705,10 @@ await Promise.race([
 
 resize();
 grow(seedFromUrl());
+initTheme((isNight, instant) => {
+  sky.target = isNight ? 1 : 0;
+  if (instant || reduceMotion) { sky.t = sky.target; applySky(sky.t); }
+});
 
 let last = 0;
 renderer.setAnimationLoop(() => {
@@ -601,6 +717,11 @@ renderer.setAnimationLoop(() => {
   last = now;
 
   updateWorld(world, now);
+  if (Math.abs(sky.target - sky.t) > 1e-4) {
+    sky.t += (sky.target - sky.t) * (1 - Math.exp(-dt * 2.4));
+    if (Math.abs(sky.target - sky.t) < 2e-3) sky.t = sky.target;
+    applySky(sky.t);
+  }
 
   if (!reduceMotion) {
     const p = waterGeo.attributes.position;
@@ -611,12 +732,12 @@ renderer.setAnimationLoop(() => {
     p.needsUpdate = true;
     for (const c of clouds.children) {
       c.position.x += c.userData.speed * dt;
-      if (c.position.x > 50) c.position.x = -50;
+      if (c.position.x > 60) c.position.x = -60;
     }
   }
 
   placeCamera(dt, now);
-  scenes.update(now, dt, weights);
-  sea.update(now);
+  scenes.update(now, dt, weights, sky.t);
+  sea.update(now, sky.t);
   renderer.render(scene, camera);
 });

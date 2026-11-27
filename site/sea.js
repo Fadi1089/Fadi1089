@@ -137,6 +137,70 @@ function tintWater(geo, world) {
   color.needsUpdate = true;
 }
 
+// Foam textures, drawn once. Rows run from the shore (top) out to sea.
+let foamTex = null;
+function foamTextures() {
+  if (foamTex) return foamTex;
+  const make = (w, h, draw) => {
+    const c = document.createElement("canvas");
+    c.width = w;
+    c.height = h;
+    draw(c.getContext("2d"), w, h);
+    const t = new THREE.CanvasTexture(c);
+    t.colorSpace = THREE.SRGBColorSpace;
+    return t;
+  };
+  let seed = 7;
+  const rand = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
+  const bubbles = (g, w, h, n, maxY) => {
+    for (let k = 0; k < n; k++) {
+      const y = rand() ** 1.6 * maxY, a = 0.75 * (1 - y / maxY);
+      g.fillStyle = `rgba(255,255,255,${a})`;
+      g.beginPath();
+      g.arc(rand() * w, y, 0.8 + rand() * 2.2, 0, Math.PI * 2);
+      g.fill();
+    }
+  };
+  foamTex = {
+    band: make(128, 64, (g, w, h) => {
+      const grad = g.createLinearGradient(0, 0, 0, h);
+      grad.addColorStop(0, "rgba(255,255,255,0.95)");
+      grad.addColorStop(0.25, "rgba(255,255,255,0.55)");
+      grad.addColorStop(0.6, "rgba(255,255,255,0.12)");
+      grad.addColorStop(1, "rgba(255,255,255,0)");
+      g.fillStyle = grad;
+      g.fillRect(0, 0, w, h);
+      bubbles(g, w, h, 70, h * 0.8);
+    }),
+    corner: make(64, 64, (g, w) => {
+      const grad = g.createRadialGradient(0, 0, 0, 0, 0, w);
+      grad.addColorStop(0, "rgba(255,255,255,0.95)");
+      grad.addColorStop(0.25, "rgba(255,255,255,0.55)");
+      grad.addColorStop(0.6, "rgba(255,255,255,0.12)");
+      grad.addColorStop(1, "rgba(255,255,255,0)");
+      g.fillStyle = grad;
+      g.fillRect(0, 0, w, w);
+      for (let k = 0; k < 30; k++) {
+        const r = rand() ** 1.6 * w * 0.8, a = rand() * Math.PI / 2;
+        g.fillStyle = `rgba(255,255,255,${0.7 * (1 - r / w)})`;
+        g.beginPath();
+        g.arc(Math.cos(a) * r, Math.sin(a) * r, 0.8 + rand() * 1.8, 0, Math.PI * 2);
+        g.fill();
+      }
+    }),
+    line: make(128, 64, (g, w, h) => {
+      const grad = g.createLinearGradient(0, 0, 0, h);
+      grad.addColorStop(0, "rgba(255,255,255,0)");
+      grad.addColorStop(0.1, "rgba(255,255,255,0.9)");
+      grad.addColorStop(0.22, "rgba(255,255,255,0.15)");
+      grad.addColorStop(0.4, "rgba(255,255,255,0)");
+      g.fillStyle = grad;
+      g.fillRect(0, 0, w, h);
+    }),
+  };
+  return foamTex;
+}
+
 export function createSea(scene, world, waterGeo) {
   const { g } = world, W = g.W, H = g.H;
   g.landDist ??= landDistance(g);
@@ -148,22 +212,38 @@ export function createSea(scene, world, waterGeo) {
   group.add(ring);
   const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), v = new THREE.Vector3(), s = new THREE.Vector3(), Y = new THREE.Vector3(0, 1, 0);
 
-  // Foam: a short white bar on the water side of every coastal cell edge.
-  const edges = [];
+  // Foam: a soft ribbon along every coastal cell edge (bright against the
+  // sand, fading out into the water), rounded pieces on the outer corners, and
+  // a thin wave line that rolls outward and fades. Its timing drifts along
+  // the coast, so the waves travel around the island.
+  const edges = [], corners = [];
+  const land = (x, y) => x >= 0 && y >= 0 && x < W && y < H && isLand(g.tiles[y * W + x]);
   for (let i = 0; i < W * H; i++) {
     if (!isLand(g.tiles[i])) continue;
-    const x = i % W, y = (i / W) | 0;
+    const x = i % W, y = (i / W) | 0, cx = x - W / 2 + 0.5, cz = y - H / 2 + 0.5;
     for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
-      const nx = x + dx, ny = y + dy;
-      if (nx < 0 || ny < 0 || nx >= W || ny >= H || isLand(g.tiles[ny * W + nx])) continue;
-      edges.push({ x: x - W / 2 + 0.5 + dx * 0.56, z: y - H / 2 + 0.5 + dy * 0.56, nx: dx, nz: dy, rot: dx ? Math.PI / 2 : 0, ph: (x * 7 + y * 13) % 6.28 });
+      if (land(x + dx, y + dy)) continue;
+      edges.push({ x: cx + dx * 0.5, z: cz + dy * 0.5, nx: dx, nz: dy, yaw: Math.atan2(dx, dy), ph: cx * 0.13 + cz * 0.17 });
+    }
+    for (const [sx, sy] of [[1, 1], [-1, 1], [-1, -1], [1, -1]]) {
+      if (land(x + sx, y) || land(x, y + sy) || land(x + sx, y + sy)) continue;
+      corners.push({ x: cx + sx * 0.5, z: cz + sy * 0.5, yaw: { "1,1": 0, "-1,1": -Math.PI / 2, "-1,-1": Math.PI, "1,-1": Math.PI / 2 }[sx + "," + sy], ph: cx * 0.13 + cz * 0.17 });
     }
   }
-  const foamMat = new THREE.MeshBasicMaterial({ color: "#f3fbff", transparent: true, opacity: 0, depthWrite: false });
-  const foam = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 0.02, 0.12), foamMat, Math.max(1, edges.length));
-  foam.count = edges.length;
-  foam.frustumCulled = false;
-  group.add(foam);
+  const foamGroup = (geo, tex, n) => {
+    const m = new THREE.InstancedMesh(geo, new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }), Math.max(1, n));
+    m.count = n;
+    m.frustumCulled = false;
+    m.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(Math.max(1, n) * 3), 3);
+    group.add(m);
+    return m;
+  };
+  const stripGeo = new THREE.PlaneGeometry(1.04, 0.6).rotateX(-Math.PI / 2).translate(0, 0, 0.3);
+  const cornerGeo = new THREE.PlaneGeometry(0.6, 0.6).rotateX(-Math.PI / 2).translate(0.3, 0, 0.3);
+  const band = foamGroup(stripGeo, foamTextures().band, edges.length);
+  const round = foamGroup(cornerGeo, foamTextures().corner, corners.length);
+  const wave = foamGroup(stripGeo, foamTextures().line, edges.length);
+  const foams = [band, round, wave];
 
   // Glints: thin flat flashes scattered over open water.
   const glints = [];
@@ -181,14 +261,30 @@ export function createSea(scene, world, waterGeo) {
   glint.frustumCulled = false;
   group.add(glint);
 
+  const grey = new THREE.Color();
+  let fade = 0, dim = 1;
   const place = (t) => {
     edges.forEach((e, k) => {
-      const lap = reduceMotion ? 0 : Math.sin(t * 1.4 + e.ph) * 0.06;
-      v.set(e.x + e.nx * lap, waterY(e.x, e.z, t) + 0.025, e.z + e.nz * lap);
-      m4.compose(v, q.setFromAxisAngle(Y, e.rot), s.set(0.95 + lap, 1, 1));
-      foam.setMatrixAt(k, m4);
+      const y = waterY(e.x, e.z, t) + 0.03;
+      const breathe = reduceMotion ? 0 : Math.sin(t * 1.1 + e.ph * 6.28);
+      m4.compose(v.set(e.x, y, e.z), q.setFromAxisAngle(Y, e.yaw), s.set(1, 1, 0.85 + breathe * 0.12));
+      band.setMatrixAt(k, m4);
+      band.setColorAt(k, grey.setScalar((0.62 + breathe * 0.12) * fade * dim));
+      const p = reduceMotion ? 0.3 : (((t * 0.3 + e.ph) % 1) + 1) % 1;
+      m4.compose(v.set(e.x + e.nx * p * 0.55, y + 0.005, e.z + e.nz * p * 0.55), q, s.set(1, 1, 1));
+      wave.setMatrixAt(k, m4);
+      wave.setColorAt(k, grey.setScalar(Math.sin(p * Math.PI) * 0.75 * fade * dim));
     });
-    foam.instanceMatrix.needsUpdate = true;
+    corners.forEach((c, k) => {
+      const breathe = reduceMotion ? 0 : Math.sin(t * 1.1 + c.ph * 6.28);
+      m4.compose(v.set(c.x, waterY(c.x, c.z, t) + 0.03, c.z), q.setFromAxisAngle(Y, c.yaw), s.set(0.88 + breathe * 0.1, 1, 0.88 + breathe * 0.1));
+      round.setMatrixAt(k, m4);
+      round.setColorAt(k, grey.setScalar((0.62 + breathe * 0.12) * fade * dim));
+    });
+    for (const m of foams) {
+      m.instanceMatrix.needsUpdate = true;
+      m.instanceColor.needsUpdate = true;
+    }
     glints.forEach((p, k) => {
       const f = reduceMotion ? 0 : Math.max(0, Math.sin(t * p.sp + p.ph)) ** 14;
       v.set(p.x, waterY(p.x, p.z, t) + 0.03, p.z);
@@ -200,17 +296,19 @@ export function createSea(scene, world, waterGeo) {
   place(0);
 
   return {
-    update(now) {
-      // Foam and glints fade in once the island has settled.
+    update(now, nightT = 0) {
+      // Foam and glints fade in once the island has settled, and dim at night.
       const f = reduceMotion ? 1 : smooth((now - world.born - world.ready) / 0.8);
-      foamMat.opacity = 0.55 * f;
-      glintMat.opacity = 0.9 * f;
-      if (!reduceMotion || f < 1) place(now);
+      const changed = f !== fade || dim !== 1 - nightT * 0.45;
+      fade = f;
+      dim = 1 - nightT * 0.45;
+      glintMat.opacity = 0.9 * f * (1 - nightT * 0.5);
+      if (!reduceMotion || changed) place(now);
     },
     dispose() {
       scene.remove(group);
-      for (const m of [foam, glint, ring]) {
-        m.geometry.dispose();
+      for (const m of [...foams, glint, ring]) {
+        if (m.geometry !== stripGeo || m === band) m.geometry.dispose();
         m.material.dispose();
         m.dispose();
       }

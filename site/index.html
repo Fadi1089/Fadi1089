@@ -12,7 +12,7 @@
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%230d2433'/%3E%3Crect x='4' y='6' width='4' height='4' fill='%236f9e4f'/%3E%3Crect x='8' y='6' width='4' height='4' fill='%233f6b3a'/%3E%3Crect x='8' y='2' width='4' height='4' fill='%23eef2f4'/%3E%3Crect x='4' y='10' width='4' height='4' fill='%23d9c48a'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <script type="importmap">
     {
@@ -25,17 +25,32 @@
   <script type="module" src="main.js"></script>
 </head>
 <body>
+  <svg class="sprite" aria-hidden="true">
+    <symbol id="i-work" viewBox="0 0 24 24"><rect x="3" y="7.5" width="18" height="12.5" rx="2"/><path d="M9 7.5V5.5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M3 13h18"/></symbol>
+    <symbol id="i-stack" viewBox="0 0 24 24"><path d="M12 3 2.5 8 12 13l9.5-5L12 3zM2.5 12.5 12 17.5l9.5-5M2.5 17 12 22l9.5-5"/></symbol>
+    <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3.5 7 8.5 6 8.5-6"/></symbol>
+    <symbol id="i-code" viewBox="0 0 24 24"><path d="m8 7-5 5 5 5M16 7l5 5-5 5M13.5 4l-3 16"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
+  </svg>
   <canvas id="world" aria-hidden="true"></canvas>
   <div class="scrim" aria-hidden="true"></div>
 
   <header class="top">
     <a class="mark" href="#hero" aria-label="Fadi Sultan">FS</a>
     <nav>
-      <a href="#lealearn" data-i18n="nav.work">Work</a>
-      <a href="#stack" data-i18n="nav.stack">Stack</a>
-      <a href="#contact" data-i18n="nav.contact">Contact</a>
-      <a href="https://github.com/Fadi1089">GitHub</a>
+      <a href="#lealearn"><svg class="ico" aria-hidden="true"><use href="#i-work"/></svg><span class="roll"><span data-i18n="nav.work">Work</span></span></a>
+      <a href="#stack"><svg class="ico" aria-hidden="true"><use href="#i-stack"/></svg><span class="roll"><span data-i18n="nav.stack">Stack</span></span></a>
+      <a href="#contact"><svg class="ico" aria-hidden="true"><use href="#i-mail"/></svg><span class="roll"><span data-i18n="nav.contact">Contact</span></span></a>
+      <a href="https://github.com/Fadi1089"><svg class="ico" aria-hidden="true"><use href="#i-code"/></svg><span class="roll"><span>GitHub</span></span></a>
     </nav>
+    <button id="theme" class="theme" type="button" aria-pressed="false" aria-label="Switch to night">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <mask id="moon-cut"><rect width="24" height="24" fill="#fff"/><circle class="cut" cx="23" cy="5" r="6.5" fill="#000"/></mask>
+        <circle class="core" cx="12" cy="12" r="5" mask="url(#moon-cut)"/>
+        <g class="rays"><path d="M12 2v2.2M12 19.8V22M2 12h2.2M19.8 12H22M4.9 4.9l1.6 1.6M17.5 17.5l1.6 1.6M4.9 19.1l1.6-1.6M17.5 6.5l1.6-1.6"/></g>
+      </svg>
+    </button>
     <div class="langs" role="group" aria-label="Language">
       <button data-lang="fr">FR</button><button data-lang="en">EN</button><button data-lang="de">DE</button>
     </div>
@@ -48,7 +63,7 @@
       <p class="lede" data-i18n="hero.lede">I build full-stack TypeScript apps, and games whose worlds grow from a few small rules.</p>
       <div class="gen">
         <button id="regen" type="button" data-i18n="hero.regen">Grow another island</button>
-        <p id="genstat" class="mono" aria-live="polite"></p>
+        <p id="genstat" class="label" aria-live="polite"></p>
       </div>
       <p class="hint" data-i18n="hero.hint">This island is built by Wave Function Collapse when the page loads, then drawn with Three.js. Scroll to fly over it.</p>
     </section>
@@ -66,22 +81,26 @@
 
     <section id="lealearn" data-cam="lealearn" class="stop">
       <div class="panel" style="--tile: var(--lea)">
-        <p class="kicker mono" data-i18n="lea.kicker">Lead developer &amp; project lead · SaaS · in production</p>
+        <p class="kicker label" data-i18n="lea.kicker">Lead developer &amp; project lead · SaaS · in production</p>
         <h2 class="stack-h"><span>Léa</span><span>Learn</span></h2>
-        <p data-i18n="lea.p1">The first AI-driven training search for French companies that covers the whole journey, from choosing a course to enrolling in it.</p>
-        <p data-i18n="lea.p2">I lead its development and run the project.</p>
-        <p class="tech mono">React · NestJS · TypeScript · Prisma · PostgreSQL · Supabase · OpenAI</p>
-        <p class="links"><a class="go" href="https://lea-learn.ai" data-i18n="lea.visit">Visit lea-learn.ai</a><span class="note" data-i18n="lea.private">Closed source</span></p>
+        <p data-i18n="lea.p">The first AI-driven training search for companies. Describe the need: Léa finds the course and its funding, then handles the paperwork through to enrolment.</p>
+        <div class="steps" data-steps>
+          <div class="track" aria-hidden="true"><span class="fill"></span><i></i><i></i><i></i><i></i><i></i><i></i></div>
+          <ol class="step-names label">
+            <li data-i18n="lea.s1">Request</li><li data-i18n="lea.s2">Check</li><li data-i18n="lea.s3">Agreement</li><li data-i18n="lea.s4">Signature</li><li data-i18n="lea.s5">Joining notice</li><li data-i18n="lea.s6">Closed</li>
+          </ol>
+        </div>
+        <p class="links"><a class="go" href="https://lea-learn.ai" data-i18n="lea.visit">Visit lea-learn.ai</a></p>
       </div>
     </section>
 
     <section id="tristik" data-cam="tristik" class="stop">
       <div class="panel has-art" style="--tile: var(--village)">
         <img class="card-art" src="img/card-tristik.webp" width="600" height="571" alt="" loading="lazy">
-        <p class="kicker mono" data-i18n="tristik.kicker">Latest project · 3D game · browser</p>
+        <p class="kicker label" data-i18n="tristik.kicker">Latest project · 3D game · browser</p>
         <h2 class="stack-h"><span>Tris</span><span>Tik</span></h2>
         <p data-i18n="tristik.p">A cozy 3D tile-placement game played with tetrominoes.</p>
-        <p class="tech mono">React · TypeScript · Three.js · Zustand · Tailwind</p>
+        <p class="tech label">React · TypeScript · Three.js · Zustand · Tailwind</p>
         <p class="links"><a class="go" href="https://fadi1089.github.io/autristik/" data-i18n="tristik.play">Play in your browser</a><a href="https://github.com/Fadi1089/autristik" data-i18n="src">Source code</a></p>
       </div>
     </section>
@@ -89,10 +108,10 @@
     <section id="cvie" data-cam="cvie" class="stop">
       <div class="panel has-art" style="--tile: var(--sand)">
         <img class="card-art" src="img/card-cvie.webp" width="479" height="488" alt="" loading="lazy">
-        <p class="kicker mono" data-i18n="cvie.kicker">Web · full-stack</p>
+        <p class="kicker label" data-i18n="cvie.kicker">Web · full-stack</p>
         <h2 class="stack-h"><span>CVie</span><span>.fr</span></h2>
         <p data-i18n="cvie.p">A free, open-source CV platform.</p>
-        <p class="tech mono">React 19 · Vite · Tailwind · Hono · Bun · Prisma · PostgreSQL</p>
+        <p class="tech label">React 19 · Vite · Tailwind · Hono · Bun · Prisma · PostgreSQL</p>
         <p class="links"><a href="https://github.com/Fadi1089/CVie.fr" data-i18n="src">Source code</a></p>
       </div>
     </section>
@@ -100,10 +119,10 @@
     <section id="formio" data-cam="formio" class="stop">
       <div class="panel has-art" style="--tile: var(--grass)">
         <img class="card-art" src="img/card-formio.webp" width="447" height="453" alt="" loading="lazy">
-        <p class="kicker mono" data-i18n="formio.kicker">Web · full-stack</p>
+        <p class="kicker label" data-i18n="formio.kicker">Web · full-stack</p>
         <h2 class="stack-h"><span>Form</span><span>io</span></h2>
         <p data-i18n="formio.p">A Google Forms alternative where questions can carry audio clips.</p>
-        <p class="tech mono">Next.js · Express · TypeScript · Prisma · Supabase</p>
+        <p class="tech label">Next.js · Express · TypeScript · Prisma · Supabase</p>
         <p class="links"><a href="https://github.com/Fadi1089/Formio" data-i18n="src">Source code</a></p>
       </div>
     </section>
@@ -111,10 +130,10 @@
     <section id="wfc" data-cam="wfc" class="stop">
       <div class="panel has-art" style="--tile: var(--rock)">
         <img class="card-art" src="img/card-wfc.webp" width="494" height="522" alt="" loading="lazy">
-        <p class="kicker mono" data-i18n="wfc.kicker">3D · Blender add-on</p>
+        <p class="kicker label" data-i18n="wfc.kicker">3D · Blender add-on</p>
         <h2 class="stack-h"><span>WFC</span><span>Terrain</span><span>Designer</span></h2>
         <p data-i18n="wfc.p">Builds modular 3D terrain in Blender with the Wave Function Collapse algorithm.</p>
-        <p class="tech mono">Python · Blender 3.0+ · Wave Function Collapse</p>
+        <p class="tech label">Python · Blender 3.0+ · Wave Function Collapse</p>
         <p class="links"><a href="https://github.com/Fadi1089/WFC-terrain-designer" data-i18n="src">Source code</a></p>
       </div>
     </section>
@@ -122,10 +141,10 @@
     <section id="adeli" data-cam="adeli" class="stop">
       <div class="panel has-art" style="--tile: var(--snow)">
         <img class="card-art" src="img/card-adeli.webp" width="704" height="520" alt="" loading="lazy">
-        <p class="kicker mono" data-i18n="adeli.kicker">Video game · in development</p>
+        <p class="kicker label" data-i18n="adeli.kicker">Video game · in development</p>
         <h2 class="stack-h"><span>Adeli</span></h2>
         <p data-i18n="adeli.p">A colony management game set in Antarctica.</p>
-        <p class="tech mono" data-i18n="adeli.tech">Game design · Simulation · Strategy</p>
+        <p class="tech label" data-i18n="adeli.tech">Game design · Simulation · Strategy</p>
         <p class="links"><a href="https://github.com/Fadi1089/Adeli" data-i18n="src">Source code</a></p>
       </div>
     </section>
@@ -139,7 +158,7 @@
           <dt data-i18n="stack.games">Games & 3D</dt><dd>Three.js · C# · Blender · Python · Java</dd>
           <dt data-i18n="stack.sys">Systems & tools</dt><dd>C · Linux · Git · Figma</dd>
         </dl>
-        <h3 class="mono small" data-i18n="more.h">Also</h3>
+        <h3 class="label small" data-i18n="more.h">Also</h3>
         <ul class="more">
           <li><a href="https://github.com/Fadi1089/Pokandemaths">Pokandemaths</a> <span data-i18n="more.poke">Pokémon-style educational game, Java</span></li>
           <li><a href="https://github.com/Fadi1089/KeepBoard">KeepBoard</a> <span data-i18n="more.keep">clipboard history for Linux, Python</span></li>
@@ -152,10 +171,10 @@
         <h2 class="stack-h" data-i18n="contact.h">Write to me</h2>
         <p data-i18n="contact.p">Always up for talking web, games, 3D or a fun project.</p>
         <p class="mail"><a href="mailto:fadi.sultan.dev@gmail.com">fadi.sultan.dev<wbr>@gmail.com</a></p>
-        <p class="links"><a href="https://github.com/Fadi1089">github.com/Fadi1089</a></p>
+        <p class="links"><button class="copy" type="button" data-copy="fadi.sultan.dev@gmail.com"><svg class="ico" aria-hidden="true"><use class="copy-ico" href="#i-copy"/></svg><span class="copy-label" data-i18n="contact.copy">Copy address</span></button><a href="https://github.com/Fadi1089">github.com/Fadi1089</a></p>
         <p class="quote" data-i18n="quote">“Plans are great. But sometimes you just have to pretend you know what you’re doing.” — Jim Halpert</p>
         <details id="credits" class="credits" hidden>
-          <summary class="mono" data-i18n="credits.h">3D models from Poly Pizza</summary>
+          <summary class="label" data-i18n="credits.h">3D models from Poly Pizza</summary>
           <ul></ul>
         </details>
       </div>
